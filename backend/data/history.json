@@ -1,3 +1,13 @@
 {
-  "records": []
+  "records": [
+    {
+      "id": "1772987655765",
+      "actionType": "backhand",
+      "angle": "side",
+      "score": 80,
+      "level": "良好",
+      "filePath": "/uploads/1772987654956-983219903.jpg",
+      "timestamp": "2026-03-08T16:34:15.765Z"
+    }
+  ]
 }
