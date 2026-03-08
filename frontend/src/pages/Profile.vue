@@ -66,7 +66,7 @@
           icon="question-o"
           is-link
         />
-      </van-cell>
+      </van-cell-group>
 
       <!-- 会员服务 -->
       <van-card title="💎 会员服务" class="vip-card">
