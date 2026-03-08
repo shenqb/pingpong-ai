@@ -136,7 +136,7 @@ const handleUpload = async () => {
       formData.append('actionType', selectedAction.value)
       formData.append('angle', selectedAngle.value)
       
-      const response = await fetch('http://localhost:8000/api/upload/analyze', {
+      const response = await fetch('/api/upload/analyze', {
         method: 'POST',
         body: formData
       })
