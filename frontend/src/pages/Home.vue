@@ -37,8 +37,8 @@
 
     <!-- 次要功能 -->
     <div class="secondary-actions">
+      <van-button plain round @click="goToHistory">📊 分析历史</van-button>
       <van-button plain round @click="goToTutorials">📚 动作教程</van-button>
-      <van-button plain round @click="goToProgress">📈 我的进步</van-button>
     </div>
 
     <!-- 热门内容 -->
@@ -71,14 +71,13 @@ const goToUpload = () => {
   router.push('/upload')
 }
 
+const goToHistory = () => {
+  router.push('/history')
+}
+
 const goToTutorials = () => {
   // TODO: 实现教程页面
   console.log('跳转到教程页面')
-}
-
-const goToProgress = () => {
-  // TODO: 实现进步页面
-  console.log('跳转到进步页面')
 }
 </script>
 

@@ -20,36 +20,53 @@
       </van-card>
 
       <!-- 本月统计 -->
-      <van-card title="📊 本月统计" class="stats-card">
+      <van-card title="📊 训练统计" class="stats-card">
         <template #default>
           <div class="stats-grid">
             <div class="stat-item">
-              <div class="stat-num">8</div>
+              <div class="stat-num">{{ stats.total }}</div>
               <div class="stat-label">分析次数</div>
             </div>
             <div class="stat-item">
-              <div class="stat-num">82</div>
+              <div class="stat-num">{{ stats.avgScore }}</div>
               <div class="stat-label">平均分</div>
             </div>
             <div class="stat-item">
-              <div class="stat-num up">+7 ⬆️</div>
-              <div class="stat-label">进步</div>
+              <div class="stat-num up">{{ stats.bestScore }}</div>
+              <div class="stat-label">最佳</div>
             </div>
           </div>
         </template>
       </van-card>
 
-      <!-- 成就徽章 -->
-      <van-card title="🏆 成就徽章" class="badge-card">
-        <template #default>
-          <div class="badges">
-            <van-tag type="primary" size="medium">首次分析</van-tag>
-            <van-tag type="success" size="medium">连续 7 天</van-tag>
-            <van-tag type="warning" size="medium">进步之星</van-tag>
-            <van-tag type="info" size="medium" plain>动作大师 🔒</van-tag>
-          </div>
-        </template>
-      </van-card>
+      <!-- 功能菜单 -->
+      <van-cell-group class="menu-group">
+        <van-cell
+          title="分析历史"
+          label="查看历史分析记录"
+          icon="records"
+          is-link
+          @click="goToHistory"
+        />
+        <van-cell
+          title="动作教程"
+          label="学习标准动作"
+          icon="video-o"
+          is-link
+        />
+        <van-cell
+          title="设置"
+          label="应用设置"
+          icon="setting-o"
+          is-link
+        />
+        <van-cell
+          title="帮助与反馈"
+          label="使用帮助"
+          icon="question-o"
+          is-link
+        />
+      </van-cell>
 
       <!-- 会员服务 -->
       <van-card title="💎 会员服务" class="vip-card">
@@ -57,7 +74,7 @@
           <div class="vip-content">
             <div class="vip-status">
               <span>当前：免费版</span>
-              <van-tag type="danger">剩余：1 次分析</van-tag>
+              <van-tag type="danger">剩余：{{ freeCount }} 次分析</van-tag>
             </div>
             <div class="vip-benefits">
               <h4>开通会员享受：</h4>
@@ -74,31 +91,59 @@
           </div>
         </template>
       </van-card>
-
-      <!-- 功能菜单 -->
-      <van-grid :column-num="2" :border="false">
-        <van-grid-item icon="setting-o" text="设置" />
-        <van-grid-item icon="question-o" text="帮助" />
-      </van-grid>
     </div>
   </div>
 </template>
 
 <script setup>
-// 个人中心页面
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+const stats = ref({ total: 0, avgScore: 0, bestScore: 0 })
+const freeCount = ref(3)
+
+const goToHistory = () => {
+  router.push('/history')
+}
+
+// 加载统计数据
+const loadStats = async () => {
+  try {
+    const response = await fetch('/api/history/stats')
+    const result = await response.json()
+    
+    if (result.success) {
+      stats.value = {
+        total: result.data.total,
+        avgScore: result.data.avgScore,
+        bestScore: result.data.bestScore
+      }
+    }
+  } catch (error) {
+    console.error('加载统计失败:', error)
+  }
+}
+
+onMounted(() => {
+  loadStats()
+})
 </script>
 
 <style scoped>
 .profile-page {
   padding-bottom: 20px;
+  max-width: 480px;
+  margin: 0 auto;
 }
 
 .profile-content {
-  padding: 20px;
+  padding: 16px;
 }
 
 .user-card {
-  margin-bottom: 15px;
+  margin-bottom: 16px;
+  border-radius: 12px;
 }
 
 .avatar {
@@ -124,19 +169,21 @@
   margin-top: 5px;
 }
 
-.stats-card, .badge-card, .vip-card {
-  margin-bottom: 15px;
+.stats-card, .vip-card {
+  margin-bottom: 16px;
+  border-radius: 12px;
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  gap: 8px;
   text-align: center;
+  padding: 12px 0;
 }
 
 .stat-num {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: bold;
   color: #1989fa;
 }
@@ -148,17 +195,18 @@
 .stat-label {
   font-size: 12px;
   color: #666;
-  margin-top: 5px;
+  margin-top: 4px;
 }
 
-.badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+.menu-group {
+  margin-bottom: 16px;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .vip-content {
   text-align: center;
+  padding: 8px 0;
 }
 
 .vip-status {

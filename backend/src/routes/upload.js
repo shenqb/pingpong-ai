@@ -62,6 +62,26 @@ router.post('/analyze', async (req, res) => {
     // 调用分析服务
     const analysisResult = await analyzePose(filePath, actionType, angle)
     
+    // 保存到历史记录
+    try {
+      const historyData = {
+        actionType,
+        angle,
+        score: analysisResult.score,
+        level: analysisResult.level,
+        filePath: `/uploads/${req.file.filename}`
+      }
+      
+      // 异步保存，不阻塞响应
+      fetch('http://localhost:8000/api/history/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(historyData)
+      }).catch(err => console.error('保存历史记录失败:', err))
+    } catch (err) {
+      console.error('保存历史记录异常:', err)
+    }
+    
     res.json({
       success: true,
       data: {

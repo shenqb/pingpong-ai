@@ -114,11 +114,17 @@ const handleUpload = async () => {
   // 创建文件输入
   const input = document.createElement('input')
   input.type = 'file'
-  input.accept = 'image/*,video/*'
+  input.accept = 'image/*'
   
   input.onchange = async (e) => {
     const file = e.target.files[0]
     if (!file) return
+    
+    // 验证文件大小（最大 10MB）
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('文件大小不能超过 10MB')
+      return
+    }
     
     selectedFile.value = file
     
@@ -136,24 +142,35 @@ const handleUpload = async () => {
       formData.append('actionType', selectedAction.value)
       formData.append('angle', selectedAngle.value)
       
+      console.log('开始上传分析:', { 
+        filename: file.name, 
+        actionType: selectedAction.value,
+        angle: selectedAngle.value 
+      })
+      
       const response = await fetch('/api/upload/analyze', {
         method: 'POST',
         body: formData
       })
       
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+      
       const result = await response.json()
+      console.log('分析结果:', result)
       
       if (result.success) {
         // 保存分析结果到 sessionStorage
         sessionStorage.setItem('analysisResult', JSON.stringify(result.data))
-        showToast('分析完成！')
+        showToast(`分析完成！得分：${result.data.analysis.score}`)
         router.push('/result')
       } else {
         showToast('分析失败：' + result.error)
       }
     } catch (error) {
       console.error('上传失败:', error)
-      showToast('上传失败，请重试')
+      showToast('上传失败，请重试：' + error.message)
     } finally {
       loading.clear()
     }

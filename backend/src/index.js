@@ -5,6 +5,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import analysisRoutes from './routes/analysis.js'
 import uploadRoutes from './routes/upload.js'
+import historyRoutes from './routes/history.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -50,6 +51,7 @@ const upload = multer({
 // 路由
 app.use('/api/analysis', analysisRoutes)
 app.use('/api/upload', upload.single('file'), uploadRoutes)
+app.use('/api/history', historyRoutes)
 
 // 健康检查
 app.get('/health', (req, res) => {
