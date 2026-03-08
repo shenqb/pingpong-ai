@@ -29,8 +29,8 @@
 
     <!-- 核心功能 -->
     <div class="main-action">
-      <van-button type="primary" size="large" round block @click="goToUpload">
-        📸 上传动作视频/图片
+      <van-button type="primary" size="large" round block @click="goToRealtime">
+        📹 实时分析动作
       </van-button>
       <p class="action-desc">支持：正手/反手/发球</p>
     </div>
@@ -67,8 +67,8 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 const activeTab = ref(0)
 
-const goToUpload = () => {
-  router.push('/upload')
+const goToRealtime = () => {
+  router.push('/realtime')
 }
 
 const goToHistory = () => {
