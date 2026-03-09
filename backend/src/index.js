@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url'
 import dotenv from 'dotenv'
 import db from './config/database.js'
 import analysisRoutes from './routes/analysis.js'
+import analysisSseRoutes from './routes/analysis-sse.js'
 import uploadRoutes from './routes/upload.js'
 import historyRoutes from './routes/history.js'
 import authRoutes from './routes/auth.js'
@@ -56,6 +57,7 @@ const upload = multer({
 // 路由
 app.use('/api/auth', authRoutes)
 app.use('/api/analysis', analysisRoutes)
+app.use('/api/analysis', analysisSseRoutes)
 app.use('/api/upload', upload.single('file'), uploadRoutes)
 app.use('/api/history', historyRoutes)
 
