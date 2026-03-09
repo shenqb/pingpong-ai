@@ -9,14 +9,14 @@ const router = express.Router()
  */
 router.get('/list', async (req, res) => {
   try {
-    const { page = 1, limit = 20 } = req.query
-    const offset = (page - 1) * limit
+    const { page = 1, limit: limitParam = 20 } = req.query
+    const limit = parseInt(limitParam)
+    const offset = (parseInt(page) - 1) * limit
     
-    const [rows] = await db.getPool().execute(`
-      SELECT * FROM analysis_records 
-      ORDER BY created_at DESC 
-      LIMIT ? OFFSET ?
-    `, [parseInt(limit), parseInt(offset)])
+    const [rows] = await db.getPool().execute(
+      'SELECT * FROM analysis_records ORDER BY created_at DESC LIMIT ? OFFSET ?',
+      [limit, offset]
+    )
     
     const [[{ total }]] = await db.getPool().execute(`
       SELECT COUNT(*) as total FROM analysis_records

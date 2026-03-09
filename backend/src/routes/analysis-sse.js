@@ -61,14 +61,22 @@ router.get('/analyze-stream', async (req, res) => {
       throw new Error('文件路径不能为空')
     }
 
-    // 处理路径：如果以 /uploads 开头，需要拼接后端目录
-    const fullPath = filePath.startsWith('/uploads') 
-      ? path.join(__dirname, '../../..', filePath)
-      : filePath
+    // 处理路径：如果以 /uploads 开头，需要拼接 backend 目录
+    // __dirname = /home/admin/.openclaw/workspace/乒乓球应用-dev/backend/src/routes
+    // 需要到 /home/admin/.openclaw/workspace/乒乓球应用-dev/backend/uploads
+    let fullPath
+    if (filePath.startsWith('/uploads')) {
+      fullPath = path.join(__dirname, '../../uploads', path.basename(filePath))
+    } else {
+      fullPath = filePath
+    }
     
     console.log('[AI 分析] 完整路径:', fullPath)
+    console.log('[AI 分析] 文件存在:', fs.existsSync(fullPath))
     
     if (!fs.existsSync(fullPath)) {
+      console.error('[AI 分析] 文件不存在！')
+      console.error('[AI 分析] 尝试路径:', fullPath)
       throw new Error(`文件不存在：${fullPath}`)
     }
 
