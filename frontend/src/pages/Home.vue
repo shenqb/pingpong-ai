@@ -76,8 +76,7 @@ const goToHistory = () => {
 }
 
 const goToTutorials = () => {
-  // TODO: 实现教程页面
-  console.log('跳转到教程页面')
+  router.push('/actions')
 }
 </script>
 

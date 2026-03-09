@@ -5,6 +5,8 @@ import Result from '../pages/Result.vue'
 import Profile from '../pages/Profile.vue'
 import History from '../pages/History.vue'
 import Realtime from '../pages/Realtime.vue'
+import StandardActions from '../pages/StandardActions.vue'
+import ActionCompare from '../pages/ActionCompare.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -12,7 +14,9 @@ const routes = [
   { path: '/realtime', name: 'Realtime', component: Realtime },
   { path: '/result', name: 'Result', component: Result },
   { path: '/history', name: 'History', component: History },
-  { path: '/profile', name: 'Profile', component: Profile }
+  { path: '/profile', name: 'Profile', component: Profile },
+  { path: '/actions', name: 'StandardActions', component: StandardActions },
+  { path: '/compare', name: 'ActionCompare', component: ActionCompare }
 ]
 
 const router = createRouter({
