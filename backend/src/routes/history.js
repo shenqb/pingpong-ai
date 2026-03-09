@@ -1,44 +1,32 @@
 import express from 'express'
-import path from 'path'
-import { fileURLToPath } from 'url'
-import fs from 'fs'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+import db from '../config/database.js'
 
 const router = express.Router()
-
-// 历史记录存储文件
-const HISTORY_FILE = path.join(__dirname, '../../data/history.json')
-
-// 确保数据目录存在
-const dataDir = path.join(__dirname, '../../data')
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true })
-}
-
-// 初始化历史记录文件
-if (!fs.existsSync(HISTORY_FILE)) {
-  fs.writeFileSync(HISTORY_FILE, JSON.stringify({ records: [] }, null, 2))
-}
 
 /**
  * GET /api/history/list
  * 获取分析历史记录
  */
-router.get('/list', (req, res) => {
+router.get('/list', async (req, res) => {
   try {
-    const data = JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8'))
-    // 按时间倒序排列，返回最近 20 条
-    const records = data.records
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-      .slice(0, 20)
+    const { page = 1, limit = 20 } = req.query
+    const offset = (page - 1) * limit
+    
+    const [rows] = await db.getPool().execute(`
+      SELECT * FROM analysis_records 
+      ORDER BY created_at DESC 
+      LIMIT ? OFFSET ?
+    `, [parseInt(limit), parseInt(offset)])
+    
+    const [[{ total }]] = await db.getPool().execute(`
+      SELECT COUNT(*) as total FROM analysis_records
+    `)
     
     res.json({
       success: true,
       data: {
-        total: data.records.length,
-        records
+        total,
+        records: rows
       }
     })
   } catch (error) {
@@ -54,9 +42,13 @@ router.get('/list', (req, res) => {
  * POST /api/history/save
  * 保存分析记录
  */
-router.post('/save', (req, res) => {
+router.post('/save', async (req, res) => {
   try {
-    const { actionType, angle, score, level, filePath } = req.body
+    const { 
+      userId, sessionId, actionType, actionName, angle, 
+      score, level, durationMs, keypoints, differences,
+      filePath, fileType, fileSize 
+    } = req.body
     
     if (!actionType || !score) {
       return res.status(400).json({
@@ -65,20 +57,30 @@ router.post('/save', (req, res) => {
       })
     }
     
-    const data = JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8'))
-    
-    const newRecord = {
-      id: Date.now().toString(),
+    const result = await db.query(`
+      INSERT INTO analysis_records 
+      (user_id, session_id, action_type, action_name, angle, score, level, 
+       duration_ms, keypoints_json, differences_json, file_path, file_type, file_size)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      userId || null,
+      sessionId || null,
       actionType,
-      angle,
+      actionName || null,
+      angle || null,
       score,
-      level,
-      filePath,
-      timestamp: new Date().toISOString()
-    }
+      level || null,
+      durationMs || null,
+      keypoints ? JSON.stringify(keypoints) : null,
+      differences ? JSON.stringify(differences) : null,
+      filePath || null,
+      fileType || null,
+      fileSize || null
+    ])
     
-    data.records.push(newRecord)
-    fs.writeFileSync(HISTORY_FILE, JSON.stringify(data, null, 2))
+    const newRecord = await db.queryOne(`
+      SELECT * FROM analysis_records WHERE id = ?
+    `, [result.insertId])
     
     res.json({
       success: true,
@@ -97,11 +99,9 @@ router.post('/save', (req, res) => {
  * DELETE /api/history/:id
  * 删除单条记录
  */
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
-    const data = JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8'))
-    data.records = data.records.filter(r => r.id !== req.params.id)
-    fs.writeFileSync(HISTORY_FILE, JSON.stringify(data, null, 2))
+    await db.query('DELETE FROM analysis_records WHERE id = ?', [req.params.id])
     
     res.json({
       success: true
@@ -119,12 +119,13 @@ router.delete('/:id', (req, res) => {
  * GET /api/history/stats
  * 获取统计信息
  */
-router.get('/stats', (req, res) => {
+router.get('/stats', async (req, res) => {
   try {
-    const data = JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8'))
-    const records = data.records
+    const [[{ total }]] = await db.getPool().execute(`
+      SELECT COUNT(*) as total FROM analysis_records
+    `)
     
-    if (records.length === 0) {
+    if (total === 0) {
       return res.json({
         success: true,
         data: {
@@ -136,37 +137,38 @@ router.get('/stats', (req, res) => {
       })
     }
     
-    // 计算平均分
-    const totalScore = records.reduce((sum, r) => sum + (r.score || 0), 0)
-    const avgScore = Math.round(totalScore / records.length)
+    const [[{ avgScore }]] = await db.getPool().execute(`
+      SELECT ROUND(AVG(score)) as avgScore FROM analysis_records WHERE score IS NOT NULL
+    `)
     
-    // 计算最高分
-    const bestScore = Math.max(...records.map(r => r.score || 0))
+    const [[{ bestScore }]] = await db.getPool().execute(`
+      SELECT MAX(score) as bestScore FROM analysis_records
+    `)
     
-    // 按动作类型统计
+    const actionStatsRows = await db.query(`
+      SELECT 
+        action_type,
+        COUNT(*) as count,
+        ROUND(AVG(score)) as avgScore
+      FROM analysis_records 
+      WHERE action_type IS NOT NULL
+      GROUP BY action_type
+    `)
+    
     const actionStats = {}
-    records.forEach(r => {
-      const type = r.actionType || 'unknown'
-      if (!actionStats[type]) {
-        actionStats[type] = { count: 0, totalScore: 0 }
+    actionStatsRows.forEach(row => {
+      actionStats[row.action_type] = {
+        count: row.count,
+        avgScore: row.avgScore
       }
-      actionStats[type].count++
-      actionStats[type].totalScore += (r.score || 0)
-    })
-    
-    // 计算每种动作的平均分
-    Object.keys(actionStats).forEach(type => {
-      actionStats[type].avgScore = Math.round(
-        actionStats[type].totalScore / actionStats[type].count
-      )
     })
     
     res.json({
       success: true,
       data: {
-        total: records.length,
-        avgScore,
-        bestScore,
+        total,
+        avgScore: avgScore || 0,
+        bestScore: bestScore || 0,
         actionStats
       }
     })
