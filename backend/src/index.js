@@ -58,7 +58,35 @@ const upload = multer({
 app.use('/api/auth', authRoutes)
 app.use('/api/analysis', analysisRoutes)
 app.use('/api/analysis', analysisSseRoutes)
-app.use('/api/upload', upload.single('file'), uploadRoutes)
+app.use('/api/upload/file', upload.single('file'), (req, res) => {
+  // 内联处理上传逻辑
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: '未找到上传的文件' })
+    }
+    
+    const fileUrl = `/uploads/${req.file.filename}`
+    
+    res.json({
+      success: true,
+      data: {
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        size: req.file.size,
+        mimetype: req.file.mimetype,
+        path: fileUrl,
+        fullPath: path.join(__dirname, '../uploads', req.file.filename)
+      }
+    })
+  } catch (error) {
+    console.error('上传失败:', error)
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+app.use('/api/upload', uploadRoutes)
 app.use('/api/history', historyRoutes)
 
 // 新增：标准动作 API

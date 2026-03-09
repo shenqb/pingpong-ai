@@ -4,8 +4,8 @@
 
     <!-- 模式选择 -->
     <van-tabs v-model:active="currentMode" class="mode-tabs">
-      <van-tab title="📹 摄像头" name="camera"></van-tab>
       <van-tab title="📁 相册上传" name="upload"></van-tab>
+      <van-tab title="📹 摄像头" name="camera"></van-tab>
     </van-tabs>
 
     <div class="video-content">
@@ -248,8 +248,10 @@ const analyzeFile = async () => {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
 
-    if (!uploadRes.data.success) {
-      throw new Error('上传失败')
+    console.log('[上传响应]', uploadRes.data)
+
+    if (!uploadRes.data || !uploadRes.data.data) {
+      throw new Error('上传响应格式错误')
     }
 
     addLog('✅ 文件上传成功', 'success')
@@ -399,15 +401,18 @@ const stopRecording = () => {
 }
 
 onMounted(() => {
-  // 检查 URL 参数，如果是相册模式，自动切换
+  // 默认使用相册上传模式
+  currentMode.value = 'upload'
+  
+  // 检查 URL 参数
   const queryMode = router.currentRoute.value.query.mode
   const queryAction = router.currentRoute.value.query.actionType
   
-  if (queryMode === 'upload') {
-    currentMode.value = 'upload'
-    if (queryAction) {
-      actionType.value = queryAction
-    }
+  if (queryMode === 'camera') {
+    currentMode.value = 'camera'
+  }
+  if (queryAction) {
+    actionType.value = queryAction
   }
   
   if (currentMode.value === 'camera') {

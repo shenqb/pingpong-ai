@@ -2,6 +2,10 @@ import express from 'express'
 import db from '../config/database.js'
 import fs from 'fs'
 import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const router = express.Router()
 
@@ -57,7 +61,13 @@ router.get('/analyze-stream', async (req, res) => {
       throw new Error('文件路径不能为空')
     }
 
-    const fullPath = path.join(process.cwd(), filePath)
+    // 处理路径：如果以 /uploads 开头，需要拼接后端目录
+    const fullPath = filePath.startsWith('/uploads') 
+      ? path.join(__dirname, '../../..', filePath)
+      : filePath
+    
+    console.log('[AI 分析] 完整路径:', fullPath)
+    
     if (!fs.existsSync(fullPath)) {
       throw new Error(`文件不存在：${fullPath}`)
     }
