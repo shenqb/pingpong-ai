@@ -53,9 +53,10 @@
 
     <!-- 底部导航 -->
     <van-tabbar v-model="activeTab">
-      <van-tabbar-item icon="home-o">首页</van-tabbar-item>
-      <van-tabbar-item icon="search">分析</van-tabbar-item>
-      <van-tabbar-item icon="user-o">我的</van-tabbar-item>
+      <van-tabbar-item icon="home-o" to="/">首页</van-tabbar-item>
+      <van-tabbar-item icon="search" to="/analysis">分析</van-tabbar-item>
+      <van-tabbar-item icon="friends-o" to="/actions">动作库</van-tabbar-item>
+      <van-tabbar-item icon="user-o" to="/profile">我的</van-tabbar-item>
     </van-tabbar>
   </div>
 </template>

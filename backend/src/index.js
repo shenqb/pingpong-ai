@@ -8,6 +8,7 @@ import db from './config/database.js'
 import analysisRoutes from './routes/analysis.js'
 import uploadRoutes from './routes/upload.js'
 import historyRoutes from './routes/history.js'
+import authRoutes from './routes/auth.js'
 
 dotenv.config()
 
@@ -53,6 +54,7 @@ const upload = multer({
 })
 
 // 路由
+app.use('/api/auth', authRoutes)
 app.use('/api/analysis', analysisRoutes)
 app.use('/api/upload', upload.single('file'), uploadRoutes)
 app.use('/api/history', historyRoutes)
