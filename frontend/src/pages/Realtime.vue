@@ -244,7 +244,7 @@ const analyzeFile = async () => {
 
     addLog('文件上传中...', 'info')
 
-    const uploadRes = await axios.post('/api/upload', formData, {
+    const uploadRes = await axios.post('/api/upload/file', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
 
@@ -253,13 +253,14 @@ const analyzeFile = async () => {
     }
 
     addLog('✅ 文件上传成功', 'success')
-    addLog(`文件路径：${uploadRes.data.data.filePath}`, 'info')
+    addLog(`文件名：${uploadRes.data.data.filename}`, 'info')
+    addLog(`文件大小：${formatFileSize(uploadRes.data.data.size)}`, 'info')
 
     // 使用 SSE 进行实时分析
     addLog('🤖 启动 MediaPipe Pose 模型...', 'info')
     
     await analyzeWithSSE({
-      filePath: uploadRes.data.data.filePath,
+      filePath: uploadRes.data.data.path,
       actionType: actionType.value
     })
 
@@ -275,23 +276,33 @@ const analyzeFile = async () => {
 // SSE 流式分析
 const analyzeWithSSE = async (params) => {
   return new Promise((resolve, reject) => {
-    const eventSource = new EventSource(`/api/analysis/analyze-stream?filePath=${encodeURIComponent(params.filePath)}&actionType=${params.actionType}`)
+    const url = `/api/analysis/analyze-stream?filePath=${encodeURIComponent(params.filePath)}&actionType=${params.actionType}`
+    console.log('[SSE] 连接:', url)
+    
+    const eventSource = new EventSource(url)
+    let logCount = 0
 
     eventSource.onmessage = (event) => {
+      logCount++
+      console.log(`[SSE] 收到消息 #${logCount}:`, event.data)
+      
       try {
         const data = JSON.parse(event.data)
         
         if (data.type === 'log') {
           addLog(data.message, data.level || 'info')
+          console.log('[SSE Log]', data.level, data.message)
         } else if (data.type === 'progress') {
           addLog(`分析进度：${data.progress}%`, 'info')
         } else if (data.type === 'result') {
+          console.log('[SSE Result]', JSON.stringify(data.data, null, 2))
           analysisResult.value = data.data
           addLog('✅ 分析完成！', 'success')
           eventSource.close()
           isAnalyzing.value = false
           resolve()
         } else if (data.type === 'error') {
+          console.error('[SSE Error]', data.message)
           addLog(`❌ ${data.message}`, 'error')
           eventSource.close()
           isAnalyzing.value = false
@@ -303,12 +314,23 @@ const analyzeWithSSE = async (params) => {
     }
 
     eventSource.onerror = (error) => {
-      console.error('SSE 连接错误:', error)
+      console.error('[SSE] 连接错误:', error)
       addLog('❌ 连接服务器失败', 'error')
       eventSource.close()
       isAnalyzing.value = false
       reject(error)
     }
+    
+    // 超时处理
+    setTimeout(() => {
+      if (isAnalyzing.value) {
+        console.error('[SSE] 超时')
+        addLog('❌ 分析超时', 'error')
+        eventSource.close()
+        isAnalyzing.value = false
+        reject(new Error('分析超时'))
+      }
+    }, 30000) // 30 秒超时
   })
 }
 
@@ -377,6 +399,17 @@ const stopRecording = () => {
 }
 
 onMounted(() => {
+  // 检查 URL 参数，如果是相册模式，自动切换
+  const queryMode = router.currentRoute.value.query.mode
+  const queryAction = router.currentRoute.value.query.actionType
+  
+  if (queryMode === 'upload') {
+    currentMode.value = 'upload'
+    if (queryAction) {
+      actionType.value = queryAction
+    }
+  }
+  
   if (currentMode.value === 'camera') {
     initPose()
   }

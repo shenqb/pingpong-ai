@@ -53,14 +53,16 @@ router.post('/analyze', async (req, res) => {
     const { actionType = 'forehand', angle = 'side' } = req.body
     const filePath = path.join(__dirname, '../../uploads', req.file.filename)
     
-    console.log('开始分析:', { 
-      filename: req.file.filename,
-      actionType, 
-      angle 
-    })
+    console.log('\n🔍 [AI 分析] 开始分析')
+    console.log('[AI 分析] 文件:', req.file.filename)
+    console.log('[AI 分析] 动作类型:', actionType)
+    console.log('[AI 分析] 角度:', angle)
     
     // 调用分析服务
     const analysisResult = await analyzePose(filePath, actionType, angle)
+    
+    console.log('[AI 分析] 分析结果:', JSON.stringify(analysisResult, null, 2))
+    console.log('🎉 [AI 分析] 完成\n')
     
     // 保存到历史记录
     try {
