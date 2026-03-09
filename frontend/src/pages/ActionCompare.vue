@@ -127,7 +127,7 @@
         :speed="100"
         :size="180"
         :stroke-width="14"
-        :layer-color="#ebedf0"
+        layer-color="#ebedf0"
         color="#1989fa"
       >
         <template #text>

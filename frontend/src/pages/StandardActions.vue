@@ -16,10 +16,10 @@
 
     <!-- 难度筛选 -->
     <div class="filter-bar">
-      <van-tag plain :type="difficulty === 'all' ? 'primary' : 'default'" @click="difficulty = 'all'">全部</van-tag>
-      <van-tag plain :type="difficulty === 'basic' ? 'primary' : 'default'" @click="difficulty = 'basic'">基础</van-tag>
-      <van-tag plain :type="difficulty === 'intermediate' ? 'primary' : 'default'" @click="difficulty = 'intermediate'">中级</van-tag>
-      <van-tag plain :type="difficulty === 'advanced' ? 'primary' : 'default'" @click="difficulty = 'advanced'">高级</van-tag>
+      <van-tag plain :type="difficulty === 'all' ? 'primary' : 'default'" @click="setDifficulty('all')">全部</van-tag>
+      <van-tag plain :type="difficulty === 'basic' ? 'primary' : 'default'" @click="setDifficulty('basic')">基础</van-tag>
+      <van-tag plain :type="difficulty === 'intermediate' ? 'primary' : 'default'" @click="setDifficulty('intermediate')">中级</van-tag>
+      <van-tag plain :type="difficulty === 'advanced' ? 'primary' : 'default'" @click="setDifficulty('advanced')">高级</van-tag>
     </div>
 
     <!-- 动作列表 -->
@@ -111,6 +111,10 @@ const filteredActions = computed(() => {
 // 分类变更
 const onCategoryChange = () => {
   // 可以添加埋点统计
+}
+
+const setDifficulty = (value) => {
+  difficulty.value = value
 }
 
 // 查看动作详情
