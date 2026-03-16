@@ -121,7 +121,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Pose } from '@mediapipe/pose'
 
@@ -154,6 +154,7 @@ const detectedLandmarks = ref(null) // 保存检测到的关键点
 const poseDetected = ref(false) // 是否检测到人体
 
 let poseInstance = null
+let poseInitialized = false
 
 const canNext = computed(() => {
   if (step.value === 1) return !!selectedAction.value
@@ -206,50 +207,77 @@ const triggerUpload = () => {
   input.click()
 }
 
-const initPose = async () => {
-  if (poseInstance) return poseInstance
-  poseInstance = new Pose({
-    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+const initPose = () => {
+  if (poseInstance) return Promise.resolve(poseInstance)
+  
+  detectStatus.value = '正在加载 AI 模型...'
+  
+  return new Promise((resolve, reject) => {
+    try {
+      const pose = new Pose({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+      })
+      
+      pose.setOptions({
+        modelComplexity: 1,
+        smoothLandmarks: true,
+        enableSegmentation: false,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+      })
+      
+      // 只设置一次回调
+      pose.onResults((results) => {
+        console.log('MediaPipe 检测完成, 关键点:', results.poseLandmarks?.length || 0)
+        
+        if (results.poseLandmarks && results.poseLandmarks.length > 0) {
+          const visibleKeypoints = results.poseLandmarks.filter(lm => lm.visibility > 0.5)
+          
+          if (visibleKeypoints.length >= 10) {
+            const confidence = (results.poseLandmarks[11]?.visibility || 0.9) * 100
+            detectStatus.value = `检测成功！置信度 ${confidence.toFixed(1)}%`
+            poseDetected.value = true
+            detectedLandmarks.value = results.poseLandmarks
+            if (canvasRef.value && previewRef.value) {
+              drawSkeleton(results.poseLandmarks, canvasRef.value, previewRef.value)
+            }
+          } else {
+            detectStatus.value = '检测到人体但关键点不足，请确保全身入镜'
+            poseDetected.value = false
+            detectedLandmarks.value = null
+          }
+        } else {
+          detectStatus.value = '未检测到人体姿态，请上传包含人物的图片'
+          poseDetected.value = false
+          detectedLandmarks.value = null
+        }
+      })
+      
+      poseInstance = pose
+      poseInitialized = true
+      detectStatus.value = 'AI 模型已就绪，正在检测...'
+      resolve(pose)
+    } catch (e) {
+      console.error('初始化失败:', e)
+      detectStatus.value = 'AI 模型加载失败: ' + e.message
+      reject(e)
+    }
   })
-  poseInstance.setOptions({
-    modelComplexity: 1,
-    smoothLandmarks: true,
-    enableSegmentation: false,
-    minDetectionConfidence: 0.5,
-    minTrackingConfidence: 0.5
-  })
-  return poseInstance
 }
 
 const onImageLoad = async () => {
   if (!previewRef.value) return
+  
+  detectStatus.value = '正在检测人体姿态...'
+  poseDetected.value = false
+  detectedLandmarks.value = null
+  
   try {
     const pose = await initPose()
-    pose.onResults((results) => {
-      if (results.poseLandmarks && results.poseLandmarks.length > 0) {
-        // 检查关键点的可见性
-        const visibleKeypoints = results.poseLandmarks.filter(lm => lm.visibility > 0.5)
-        
-        if (visibleKeypoints.length >= 10) {
-          // 至少 10 个关键点可见才算检测成功
-          const confidence = (results.poseLandmarks[11]?.visibility || 0.9) * 100 // 用肩膀作为参考
-          detectStatus.value = `检测成功！置信度 ${confidence.toFixed(1)}%`
-          poseDetected.value = true
-          detectedLandmarks.value = results.poseLandmarks
-          if (canvasRef.value) drawSkeleton(results.poseLandmarks, canvasRef.value, previewRef.value)
-        } else {
-          detectStatus.value = '检测到人体但关键点不足，请确保全身入镜'
-          poseDetected.value = false
-          detectedLandmarks.value = null
-        }
-      } else {
-        detectStatus.value = '未检测到人体姿态，请上传包含人物的图片'
-        poseDetected.value = false
-        detectedLandmarks.value = null
-      }
-    })
+    console.log('开始检测...')
     pose.send({ image: previewRef.value })
   } catch (e) {
+    console.error('检测失败:', e)
     detectStatus.value = '检测失败: ' + e.message
     poseDetected.value = false
     detectedLandmarks.value = null
@@ -510,8 +538,15 @@ const getSuggestion = (key, value, optimal) => {
     rightKnee: diff < 0 ? '右膝弯曲不足，建议降低重心' : '右膝弯曲过度，建议抬高重心',
     torso: diff < 0 ? '躯干前倾不足，建议增加前倾' : '躯干前倾过度，建议挺直身体'
   }
-  return suggestions[key] || '请教练现场指导'
-}
+
+// 页面加载时预初始化 MediaPipe（可选，提前加载模型）
+onMounted(() => {
+  initPose().then(() => {
+    console.log('MediaPipe 预加载完成')
+  }).catch(e => {
+    console.error('MediaPipe 预加载失败:', e)
+  })
+})
 </script>
 
 <style scoped>
