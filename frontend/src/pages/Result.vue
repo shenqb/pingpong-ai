@@ -21,7 +21,7 @@
       <div class="score-card glass-card" :class="scoreClass">
         <div class="score-header">
           <div class="score-action-name">{{ getActionName(result.action) }}</div>
-          <div class="score-time">{{ result.confidence * 100 | 0 }}% 置信度</div>
+          <div class="score-time">{{ (result.confidence * 100).toFixed(0) }}% 置信度</div>
         </div>
         <div class="score-body">
           <div class="score-ring">
@@ -37,34 +37,29 @@
         </div>
       </div>
 
-      <!-- 快速统计 -->
-      <div class="quick-stats">
-        <div class="quick-stat glass-card">
-          <div class="qs-value">{{ Object.keys(result.angles || {}).length }}</div>
-          <div class="qs-label">检测角度</div>
-        </div>
-        <div class="quick-stat glass-card">
-          <div class="qs-value">+5</div>
-          <div class="qs-label">比上次</div>
-        </div>
-        <div class="quick-stat glass-card">
-          <div class="qs-value">{{ improvement }}%</div>
-          <div class="qs-label">总进步</div>
-        </div>
+      <!-- 检测到的角度数 -->
+      <div v-if="angleCount === 0" class="error-card glass-card">
+        <div class="error-icon">⚠️</div>
+        <div class="error-text">未检测到足够的身体关键点</div>
+        <div class="error-hint">请确保全身入镜，光线充足</div>
       </div>
 
       <!-- 角度分析 -->
-      <section class="section" v-if="result.angles">
-        <div class="section-title">角度分析</div>
+      <section class="section" v-if="angleCount > 0">
+        <div class="section-title">关节角度分析</div>
         <div class="angles-card glass-card">
           <div class="angle-row" v-for="(value, key) in result.angles" :key="key">
             <div class="angle-info">
               <div class="angle-name">{{ getJointName(key) }}</div>
-              <div class="angle-bar">
-                <div class="angle-fill" :style="{ width: (value / 180) * 100 + '%' }"></div>
+              <div class="angle-bar-container">
+                <div class="angle-optimal-range" :style="getOptimalRangeStyle(key)"></div>
+                <div class="angle-bar">
+                  <div class="angle-fill" :style="{ width: (value / 180) * 100 + '%' }"></div>
+                  <div class="angle-marker" :style="{ left: (value / 180) * 100 + '%' }"></div>
+                </div>
               </div>
             </div>
-            <div class="angle-value">{{ value }}°</div>
+            <div class="angle-value" :class="getAngleClass(key, value)">{{ value }}°</div>
           </div>
         </div>
       </section>
@@ -90,9 +85,31 @@
           <div class="issue-item" v-for="(issue, i) in result.analysis.issues" :key="i" :class="issue.severity">
             <div class="issue-header">
               <div class="issue-name">{{ issue.joint }}</div>
-              <div class="issue-diff">调整 {{ issue.severity === 'high' ? '重点' : '建议' }}</div>
+              <div class="issue-diff">{{ issue.diff > 0 ? '+' : '' }}{{ issue.diff }}°</div>
+            </div>
+            <div class="issue-detail">
+              <span class="user-value">你的: {{ issue.userAngle }}°</span>
+              <span class="optimal-value">标准: {{ issue.optimal }}°</span>
             </div>
             <div class="issue-suggestion">{{ issue.suggestion }}</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 参考动作 -->
+      <section class="section">
+        <div class="section-title">📖 标准动作参考</div>
+        <div class="reference-card glass-card">
+          <img 
+            :src="getReferenceImage(result.action)" 
+            class="reference-image"
+            @error="handleImageError"
+            alt="标准动作参考"
+          />
+          <div class="reference-tips">
+            <div class="tip-item" v-for="(tip, i) in getReferenceTips(result.action)" :key="i">
+              {{ tip }}
+            </div>
           </div>
         </div>
       </section>
@@ -119,14 +136,78 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const result = ref(null)
-const improvement = ref(15)
+const imageError = ref(false)
 
 const standardActions = {
-  forehand: { name: '正手攻球', angles: { leftElbow: { optimal: 90, range: [70, 110] } } },
-  backhand: { name: '反手推挡', angles: {} },
-  forehand_loop: { name: '正手拉弧圈', angles: {} },
-  serve: { name: '发球', angles: {} }
+  forehand: { 
+    name: '正手攻球', 
+    angles: { 
+      leftElbow: { optimal: 90, range: [70, 110] },
+      rightElbow: { optimal: 85, range: [65, 105] },
+      leftKnee: { optimal: 130, range: [110, 150] },
+      rightKnee: { optimal: 140, range: [120, 160] },
+      torso: { optimal: 10, range: [0, 20] }
+    },
+    tips: ['重心略前倾', '击球点在身体右侧前方', '大臂带动小臂发力', '手腕固定，控制拍形']
+  },
+  backhand: { 
+    name: '反手推挡', 
+    angles: {
+      leftElbow: { optimal: 80, range: [60, 100] },
+      rightElbow: { optimal: 85, range: [65, 105] },
+      leftKnee: { optimal: 140, range: [120, 160] },
+      rightKnee: { optimal: 145, range: [125, 165] },
+      torso: { optimal: 5, range: [0, 15] }
+    },
+    tips: ['身体正对来球', '肘关节贴近身体', '前臂发力为主', '拍形稍前倾']
+  },
+  forehand_loop: { 
+    name: '正手拉弧圈', 
+    angles: {
+      leftElbow: { optimal: 100, range: [80, 120] },
+      rightElbow: { optimal: 95, range: [75, 115] },
+      leftKnee: { optimal: 120, range: [100, 140] },
+      rightKnee: { optimal: 130, range: [110, 150] },
+      torso: { optimal: 15, range: [5, 25] }
+    },
+    tips: ['重心降低，蓄力充分', '蹬腿转腰发力', '摩擦球的中上部', '手臂充分伸展']
+  },
+  backhand_loop: { 
+    name: '反手拉弧圈', 
+    angles: {
+      leftElbow: { optimal: 85, range: [65, 105] },
+      rightElbow: { optimal: 90, range: [70, 110] },
+      leftKnee: { optimal: 130, range: [110, 150] },
+      rightKnee: { optimal: 135, range: [115, 155] },
+      torso: { optimal: 10, range: [0, 20] }
+    },
+    tips: ['身体略向左转', '前臂快速收缩', '摩擦球的中上部', '重心随球前移']
+  },
+  serve: { 
+    name: '发球', 
+    angles: {
+      leftElbow: { optimal: 70, range: [50, 90] },
+      rightElbow: { optimal: 90, range: [70, 110] },
+      leftKnee: { optimal: 130, range: [110, 150] },
+      rightKnee: { optimal: 140, range: [120, 160] },
+      torso: { optimal: 8, range: [0, 18] }
+    },
+    tips: ['抛球高度一致', '击球点在身体右侧', '手腕抖动发力', '控制拍形变化']
+  },
+  flick: { 
+    name: '挑打', 
+    angles: {
+      leftElbow: { optimal: 75, range: [55, 95] },
+      rightElbow: { optimal: 80, range: [60, 100] },
+      leftKnee: { optimal: 135, range: [115, 155] },
+      rightKnee: { optimal: 140, range: [120, 160] },
+      torso: { optimal: 5, range: [0, 15] }
+    },
+    tips: ['步法快速到位', '手臂伸入台内', '手腕快速抖动', '击球上升期']
+  }
 }
+
+const angleCount = computed(() => Object.keys(result.value?.angles || {}).length)
 
 const scoreClass = computed(() => {
   const s = result.value?.score || 0
@@ -138,21 +219,62 @@ const scoreClass = computed(() => {
 
 const scoreOffset = computed(() => {
   const circumference = 2 * Math.PI * 42
-  return circumference * (1 - (result.value?.score || 0) / 100)
+  const score = result.value?.score || 0
+  return circumference * (1 - score / 100)
 })
 
 const getActionName = (action) => standardActions[action]?.name || '动作分析'
 
 const getJointName = (key) => {
-  const names = { leftElbow: '左肘', rightElbow: '右肘', leftKnee: '左膝', rightKnee: '右膝', torso: '躯干' }
+  const names = { 
+    leftElbow: '左肘', 
+    rightElbow: '右肘', 
+    leftKnee: '左膝', 
+    rightKnee: '右膝', 
+    torso: '躯干' 
+  }
   return names[key] || key
 }
 
-const shareResult = () => {}
+const getOptimalRangeStyle = (key) => {
+  const std = standardActions[result.value.action]?.angles?.[key]
+  if (!std) return {}
+  const left = (std.range[0] / 180) * 100
+  const width = ((std.range[1] - std.range[0]) / 180) * 100
+  return {
+    left: left + '%',
+    width: width + '%'
+  }
+}
+
+const getAngleClass = (key, value) => {
+  const std = standardActions[result.value.action]?.angles?.[key]
+  if (!std) return ''
+  return value >= std.range[0] && value <= std.range[1] ? 'good' : 'warn'
+}
+
+const getReferenceImage = (action) => {
+  return `/standard-poses/${action}.jpg`
+}
+
+const handleImageError = () => {
+  imageError.value = true
+}
+
+const getReferenceTips = (action) => {
+  return standardActions[action]?.tips || ['参考专业选手动作', '注意身体协调', '多加练习']
+}
+
+const shareResult = () => {
+  // TODO: 实现分享功能
+}
 
 onMounted(() => {
   const saved = sessionStorage.getItem('analysisResult')
-  if (saved) result.value = JSON.parse(saved)
+  if (saved) {
+    result.value = JSON.parse(saved)
+    console.log('Loaded result:', result.value)
+  }
 })
 </script>
 
@@ -172,7 +294,6 @@ onMounted(() => {
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
 }
 
-/* 导航栏 */
 .nav-bar {
   position: sticky;
   top: 0;
@@ -199,12 +320,10 @@ onMounted(() => {
   color: #1A1A1A;
 }
 
-/* 主内容 */
 .main-content {
   padding: 16px;
 }
 
-/* 分数卡片 */
 .score-card {
   border-radius: 20px;
   padding: 24px;
@@ -306,33 +425,31 @@ onMounted(() => {
 .score-card.average .score-label { color: #FF9500; }
 .score-card.improve .score-label { color: #FF3B30; }
 
-/* 快速统计 */
-.quick-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.quick-stat {
+.error-card {
+  padding: 20px;
   border-radius: 14px;
-  padding: 16px;
   text-align: center;
+  margin-bottom: 16px;
+  background: rgba(255, 59, 48, 0.08);
 }
 
-.qs-value {
-  font-size: 24px;
-  font-weight: 700;
-  color: #1A1A1A;
+.error-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
 }
 
-.qs-label {
-  font-size: 12px;
+.error-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #FF3B30;
+  margin-bottom: 4px;
+}
+
+.error-hint {
+  font-size: 13px;
   color: #8E8E93;
-  margin-top: 4px;
 }
 
-/* Section */
 .section {
   margin-bottom: 24px;
 }
@@ -344,7 +461,6 @@ onMounted(() => {
   margin-bottom: 12px;
 }
 
-/* 角度卡片 */
 .angles-card {
   border-radius: 14px;
   padding: 4px 16px;
@@ -374,28 +490,64 @@ onMounted(() => {
   margin-bottom: 8px;
 }
 
+.angle-bar-container {
+  position: relative;
+  height: 24px;
+}
+
+.angle-optimal-range {
+  position: absolute;
+  top: 8px;
+  height: 8px;
+  background: rgba(52, 199, 89, 0.2);
+  border-radius: 4px;
+}
+
 .angle-bar {
-  height: 6px;
+  position: absolute;
+  top: 8px;
+  left: 0;
+  right: 0;
+  height: 8px;
   background: #E5E5EA;
-  border-radius: 3px;
-  overflow: hidden;
+  border-radius: 4px;
+  overflow: visible;
 }
 
 .angle-fill {
   height: 100%;
   background: linear-gradient(90deg, #007AFF, #5856D6);
-  border-radius: 3px;
+  border-radius: 4px;
   transition: width 0.5s ease;
+}
+
+.angle-marker {
+  position: absolute;
+  top: -4px;
+  width: 16px;
+  height: 16px;
+  background: #007AFF;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.4);
 }
 
 .angle-value {
   font-size: 18px;
   font-weight: 600;
-  color: #007AFF;
+  color: #8E8E93;
 }
 
-/* 优点卡片 */
-.strengths-card {
+.angle-value.good {
+  color: #34C759;
+}
+
+.angle-value.warn {
+  color: #FF9500;
+}
+
+.strengths-card, .issues-card {
   border-radius: 14px;
   padding: 8px 16px;
 }
@@ -435,12 +587,6 @@ onMounted(() => {
   font-size: 14px;
 }
 
-/* 问题卡片 */
-.issues-card {
-  border-radius: 14px;
-  padding: 8px 16px;
-}
-
 .issue-item {
   padding: 14px 0;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
@@ -470,21 +616,76 @@ onMounted(() => {
 }
 
 .issue-diff {
-  font-size: 12px;
-  color: #8E8E93;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(255, 149, 0, 0.15);
+  color: #FF9500;
 }
 
 .issue-item.high .issue-diff {
+  background: rgba(255, 59, 48, 0.15);
   color: #FF3B30;
+}
+
+.issue-detail {
+  font-size: 13px;
+  color: #8E8E93;
+  margin-bottom: 6px;
+}
+
+.user-value {
+  margin-right: 16px;
+}
+
+.optimal-value {
+  color: #34C759;
 }
 
 .issue-suggestion {
   font-size: 14px;
-  color: #8E8E93;
+  color: #007AFF;
   line-height: 1.5;
 }
 
-/* 操作按钮 */
+.reference-card {
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.reference-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  background: #F2F5F9;
+}
+
+.reference-tips {
+  padding: 16px;
+}
+
+.tip-item {
+  font-size: 14px;
+  color: #1A1A1A;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding-left: 16px;
+  position: relative;
+}
+
+.tip-item:last-child {
+  border-bottom: none;
+}
+
+.tip-item::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: #007AFF;
+  font-weight: bold;
+}
+
 .action-buttons {
   display: flex;
   gap: 12px;
@@ -520,7 +721,6 @@ onMounted(() => {
   transform: scale(0.98);
 }
 
-/* 无数据 */
 .no-data {
   display: flex;
   flex-direction: column;
