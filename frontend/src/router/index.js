@@ -19,7 +19,7 @@ const routes = [
   { path: '/history', name: 'History', component: History },
   { path: '/analysis', name: 'Analysis', component: Analysis },
   { path: '/profile', name: 'Profile', component: Profile },
-  { path: '/actions', name: 'StandardActions', component: StandardActions },
+  { path: '/standard', name: 'StandardActions', component: StandardActions },
   { path: '/compare', name: 'ActionCompare', component: ActionCompare }
 ]
 
