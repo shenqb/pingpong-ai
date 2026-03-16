@@ -155,6 +155,7 @@ const poseDetected = ref(false) // 是否检测到人体
 
 let poseInstance = null
 let poseInitialized = false
+let modelReady = false // 模型是否已准备好
 
 const canNext = computed(() => {
   if (step.value === 1) return !!selectedAction.value
@@ -208,12 +209,23 @@ const triggerUpload = () => {
 }
 
 const initPose = () => {
-  if (poseInstance) return Promise.resolve(poseInstance)
+  if (poseInstance && modelReady) return Promise.resolve(poseInstance)
   
   detectStatus.value = '正在加载 AI 模型...'
   
   return new Promise((resolve, reject) => {
     try {
+      // 如果实例已存在但模型未准备好，等待
+      if (poseInstance && !modelReady) {
+        const checkReady = setInterval(() => {
+          if (modelReady) {
+            clearInterval(checkReady)
+            resolve(poseInstance)
+          }
+        }, 100)
+        return
+      }
+      
       const pose = new Pose({
         locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
       })
@@ -226,9 +238,15 @@ const initPose = () => {
         minTrackingConfidence: 0.5
       })
       
-      // 只设置一次回调
+      // 设置回调
       pose.onResults((results) => {
         console.log('MediaPipe 检测完成, 关键点:', results.poseLandmarks?.length || 0)
+        
+        // 第一次收到结果，说明模型已加载
+        if (!modelReady) {
+          modelReady = true
+          console.log('MediaPipe 模型已就绪')
+        }
         
         if (results.poseLandmarks && results.poseLandmarks.length > 0) {
           const visibleKeypoints = results.poseLandmarks.filter(lm => lm.visibility > 0.5)
@@ -255,8 +273,36 @@ const initPose = () => {
       
       poseInstance = pose
       poseInitialized = true
-      detectStatus.value = 'AI 模型已就绪，正在检测...'
-      resolve(pose)
+      
+      // 创建一个空白的canvas来初始化模型
+      detectStatus.value = '正在初始化模型...'
+      const testCanvas = document.createElement('canvas')
+      testCanvas.width = 100
+      testCanvas.height = 100
+      const ctx = testCanvas.getContext('2d')
+      ctx.fillStyle = 'white'
+      ctx.fillRect(0, 0, 100, 100)
+      
+      // 发送测试图片来触发模型加载
+      pose.send({ image: testCanvas })
+      
+      // 等待模型准备好
+      const checkReady = setInterval(() => {
+        if (modelReady) {
+          clearInterval(checkReady)
+          resolve(pose)
+        }
+      }, 100)
+      
+      // 超时保护
+      setTimeout(() => {
+        if (!modelReady) {
+          clearInterval(checkReady)
+          modelReady = true // 强制认为已准备好
+          resolve(pose)
+        }
+      }, 5000)
+      
     } catch (e) {
       console.error('初始化失败:', e)
       detectStatus.value = 'AI 模型加载失败: ' + e.message
@@ -541,13 +587,16 @@ const getSuggestion = (key, value, optimal) => {
   return suggestions[key] || '请教练现场指导'
 }
 
-// 页面加载时预初始化 MediaPipe
+// 页面加载时预初始化 MediaPipe（后台加载，不阻塞UI）
 onMounted(() => {
-  initPose().then(() => {
-    console.log('MediaPipe 预加载完成')
-  }).catch(e => {
-    console.error('MediaPipe 预加载失败:', e)
-  })
+  // 延迟加载，不阻塞页面渲染
+  setTimeout(() => {
+    initPose().then(() => {
+      console.log('MediaPipe 预加载完成')
+    }).catch(e => {
+      console.error('MediaPipe 预加载失败:', e)
+    })
+  }, 1000)
 })
 </script>
 
