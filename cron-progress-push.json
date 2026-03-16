@@ -1,0 +1,13 @@
+{
+  "name": "乒乓球 AI-15 分钟进度推送",
+  "schedule": {
+    "kind": "every",
+    "everyMs": 900000
+  },
+  "payload": {
+    "kind": "systemEvent",
+    "text": "## 🏓 乒乓球 AI 项目 - 15 分钟进度推送\n\n**时间**: 自动执行\n**任务**: 推送项目进展到钉钉\n\n### 执行内容:\n1. 检查服务状态 (前端/后端/MySQL)\n2. 获取最新 Git 提交\n3. 生成进度报告\n4. 推送到钉钉群\n\n### 推送频率:\n- 每 15 分钟一次\n- 持续运行直到明早 8 点上线\n\n---\n*定时任务已激活*"
+  },
+  "sessionTarget": "main",
+  "enabled": true
+}
