@@ -1,0 +1,8 @@
+<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#f0f4f8"/>
+  <text x="200" y="100" text-anchor="middle" font-size="20" fill="#5856D6">🔥 反手拉弧圈</text>
+  <text x="200" y="150" text-anchor="middle" font-size="14" fill="#666">标准动作示范</text>
+  <circle cx="200" cy="200" r="50" fill="#5856D6" opacity="0.2"/>
+  <text x="200" y="205" text-anchor="middle" font-size="12" fill="#5856D6">示意图</text>
+  <text x="200" y="280" text-anchor="middle" font-size="12" fill="#999">请替换为真实图片</text>
+</svg>

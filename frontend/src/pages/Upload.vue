@@ -135,9 +135,10 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute()
 const step = ref(1)
 
 const actions = [
@@ -466,6 +467,16 @@ const getSuggestion = (key, value, optimal) => {
   const s = { leftElbow: diff < 0 ? '左肘弯曲不足' : '左肘弯曲过度', rightElbow: diff < 0 ? '右肘弯曲不足' : '右肘弯曲过度', leftKnee: diff < 0 ? '左膝弯曲不足' : '左膝弯曲过度', rightKnee: diff < 0 ? '右膝弯曲不足' : '右膝弯曲过度', torso: diff < 0 ? '躯干前倾不足' : '躯干前倾过度' }
   return s[key] || '请教练现场指导'
 }
+
+// 页面加载时检查 URL 参数
+onMounted(() => {
+  // 从 URL 参数获取默认动作
+  const actionParam = route.query.action
+  if (actionParam && actions.find(a => a.value === actionParam)) {
+    selectedAction.value = actionParam
+    step.value = 2 // 跳到第二步
+  }
+})
 
 // 页面卸载时清理
 onUnmounted(() => {
