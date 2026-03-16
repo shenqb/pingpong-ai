@@ -1,8 +1,58 @@
-<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
-  <rect width="100%" height="100%" fill="#f0f4f8"/>
-  <text x="200" y="100" text-anchor="middle" font-size="20" fill="#5856D6">🔥 反手拉弧圈</text>
-  <text x="200" y="150" text-anchor="middle" font-size="14" fill="#666">标准动作示范</text>
-  <circle cx="200" cy="200" r="50" fill="#5856D6" opacity="0.2"/>
-  <text x="200" y="205" text-anchor="middle" font-size="12" fill="#5856D6">示意图</text>
-  <text x="200" y="280" text-anchor="middle" font-size="12" fill="#999">请替换为真实图片</text>
+<svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8e44ad;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#9b59b6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="skin" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFE4C4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFDAB9;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <rect width="400" height="300" fill="url(#bg)"/>
+  <rect x="0" y="250" width="400" height="50" fill="#6c3483" opacity="0.3"/>
+  
+  <!-- 球台 -->
+  <rect x="50" y="200" width="150" height="8" fill="#1a5276" rx="2"/>
+  <rect x="50" y="208" width="150" height="42" fill="#2874a6" opacity="0.5"/>
+  
+  <!-- 人物 - 反手拉弧圈 -->
+  <!-- 腿 -->
+  <line x1="220" y1="230" x2="195" y2="250" stroke="url(#skin)" stroke-width="12" stroke-linecap="round"/>
+  <line x1="245" y1="230" x2="265" y2="250" stroke="url(#skin)" stroke-width="12" stroke-linecap="round"/>
+  
+  <!-- 身体（略左转） -->
+  <ellipse cx="230" cy="175" rx="28" ry="50" fill="#1abc9c"/>
+  
+  <!-- 右臂（横拉） -->
+  <line x1="250" y1="155" x2="210" y2="150" stroke="url(#skin)" stroke-width="10" stroke-linecap="round"/>
+  <line x1="210" y1="150" x2="170" y2="175" stroke="url(#skin)" stroke-width="10" stroke-linecap="round"/>
+  
+  <!-- 球拍 -->
+  <ellipse cx="155" cy="182" rx="22" ry="28" fill="#2c3e50" transform="rotate(20, 155, 182)"/>
+  <ellipse cx="155" cy="182" rx="18" ry="23" fill="#e74c3c" transform="rotate(20, 155, 182)"/>
+  <rect x="148" y="202" width="7" height="28" fill="#8b4513" transform="rotate(20, 152, 216)"/>
+  
+  <!-- 左臂 -->
+  <line x1="210" y1="155" x2="180" y2="130" stroke="url(#skin)" stroke-width="10" stroke-linecap="round"/>
+  
+  <!-- 头 -->
+  <circle cx="230" cy="110" r="25" fill="url(#skin)"/>
+  <circle cx="225" cy="105" r="3" fill="#2c3e50"/>
+  
+  <!-- 球 -->
+  <circle cx="120" cy="170" r="8" fill="#f39c12"/>
+  <circle cx="118" cy="168" r="2" fill="white" opacity="0.6"/>
+  
+  <!-- 旋转箭头 -->
+  <path d="M 180 160 Q 160 140 150 165" stroke="#f1c40f" stroke-width="3" fill="none" stroke-dasharray="5,5"/>
+  
+  <!-- 文字 -->
+  <text x="270" y="40" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white">反手拉弧圈</text>
+  <text x="270" y="65" font-family="Arial, sans-serif" font-size="14" fill="rgba(255,255,255,0.8)">Backhand Loop</text>
+  
+  <!-- 关键点 -->
+  <circle cx="210" cy="150" r="4" fill="#f1c40f"/>
+  <text x="220" y="145" font-size="10" fill="white">前臂收缩</text>
 </svg>
