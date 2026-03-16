@@ -538,8 +538,10 @@ const getSuggestion = (key, value, optimal) => {
     rightKnee: diff < 0 ? '右膝弯曲不足，建议降低重心' : '右膝弯曲过度，建议抬高重心',
     torso: diff < 0 ? '躯干前倾不足，建议增加前倾' : '躯干前倾过度，建议挺直身体'
   }
+  return suggestions[key] || '请教练现场指导'
+}
 
-// 页面加载时预初始化 MediaPipe（可选，提前加载模型）
+// 页面加载时预初始化 MediaPipe
 onMounted(() => {
   initPose().then(() => {
     console.log('MediaPipe 预加载完成')
