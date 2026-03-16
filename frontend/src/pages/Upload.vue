@@ -95,7 +95,7 @@
           <template v-else>
             <img :src="previewImage" class="preview-img" ref="previewRef" @load="onImageLoad" />
             <canvas ref="canvasRef" class="pose-canvas"></canvas>
-            <button class="change-btn" @click.stop="previewImage = null">更换图片</button>
+            <button class="change-btn" @click.stop="resetUpload">更换图片</button>
           </template>
         </div>
 
@@ -150,24 +150,34 @@ const previewRef = ref(null)
 const canvasRef = ref(null)
 const analyzing = ref(false)
 const detectStatus = ref('')
+const detectedLandmarks = ref(null) // 保存检测到的关键点
+const poseDetected = ref(false) // 是否检测到人体
 
 let poseInstance = null
 
 const canNext = computed(() => {
   if (step.value === 1) return !!selectedAction.value
   if (step.value === 2) return !!selectedAngle.value
-  if (step.value === 3) return !!previewImage.value && !analyzing.value
+  if (step.value === 3) return !!previewImage.value && !analyzing.value && poseDetected.value
   return false
 })
 
 const statusClass = computed(() => {
   if (detectStatus.value.includes('成功')) return 'success'
-  if (detectStatus.value.includes('失败')) return 'error'
+  if (detectStatus.value.includes('失败') || detectStatus.value.includes('未检测')) return 'error'
+  if (detectStatus.value.includes('不足')) return 'warning'
   return ''
 })
 
 const selectAction = (v) => selectedAction.value = v
 const selectAngle = (v) => selectedAngle.value = v
+
+const resetUpload = () => {
+  previewImage.value = null
+  poseDetected.value = false
+  detectedLandmarks.value = null
+  detectStatus.value = ''
+}
 
 const nextStep = async () => {
   if (!canNext.value) return
@@ -217,16 +227,32 @@ const onImageLoad = async () => {
     const pose = await initPose()
     pose.onResults((results) => {
       if (results.poseLandmarks && results.poseLandmarks.length > 0) {
-        const confidence = (results.poseLandmarks[0]?.visibility || 0.9) * 100
-        detectStatus.value = `检测成功！置信度 ${confidence.toFixed(1)}%`
-        if (canvasRef.value) drawSkeleton(results.poseLandmarks, canvasRef.value, previewRef.value)
+        // 检查关键点的可见性
+        const visibleKeypoints = results.poseLandmarks.filter(lm => lm.visibility > 0.5)
+        
+        if (visibleKeypoints.length >= 10) {
+          // 至少 10 个关键点可见才算检测成功
+          const confidence = (results.poseLandmarks[11]?.visibility || 0.9) * 100 // 用肩膀作为参考
+          detectStatus.value = `检测成功！置信度 ${confidence.toFixed(1)}%`
+          poseDetected.value = true
+          detectedLandmarks.value = results.poseLandmarks
+          if (canvasRef.value) drawSkeleton(results.poseLandmarks, canvasRef.value, previewRef.value)
+        } else {
+          detectStatus.value = '检测到人体但关键点不足，请确保全身入镜'
+          poseDetected.value = false
+          detectedLandmarks.value = null
+        }
       } else {
-        detectStatus.value = '未检测到人体姿态'
+        detectStatus.value = '未检测到人体姿态，请上传包含人物的图片'
+        poseDetected.value = false
+        detectedLandmarks.value = null
       }
     })
     pose.send({ image: previewRef.value })
   } catch (e) {
     detectStatus.value = '检测失败: ' + e.message
+    poseDetected.value = false
+    detectedLandmarks.value = null
   }
 }
 
@@ -257,23 +283,234 @@ const drawSkeleton = (landmarks, canvas, img) => {
 }
 
 const startAnalysis = async () => {
+  // 验证是否检测到人体
+  if (!poseDetected.value || !detectedLandmarks.value) {
+    detectStatus.value = '请先上传包含人物的图片'
+    return
+  }
+
   analyzing.value = true
-  detectStatus.value = '正在分析...'
-  await new Promise(r => setTimeout(r, 1500))
-  const result = {
-    action: selectedAction.value,
-    angle: selectedAngle.value,
-    score: 75 + Math.floor(Math.random() * 20),
-    level: '良好',
-    confidence: 0.92,
-    angles: { leftElbow: 85, rightElbow: 90, leftKnee: 130, rightKnee: 140, torso: 12 },
-    analysis: {
-      strengths: [{ joint: '肘部', message: '角度标准' }],
-      issues: [{ joint: '躯干', severity: 'medium', suggestion: '前倾角度可以再大一些' }]
+  detectStatus.value = '正在分析动作...'
+
+  try {
+    // 提取关键点
+    const keypoints = extractKeypoints(detectedLandmarks.value)
+    
+    // 计算角度
+    const angles = calculateAllAngles(keypoints)
+    
+    // 分析动作
+    const analysis = analyzeAction(angles, selectedAction.value)
+    
+    const result = {
+      action: selectedAction.value,
+      angle: selectedAngle.value,
+      score: analysis.score,
+      level: analysis.level,
+      confidence: analysis.confidence,
+      angles: angles,
+      keypoints: keypoints,
+      analysis: {
+        strengths: analysis.strengths,
+        issues: analysis.issues
+      }
+    }
+
+    sessionStorage.setItem('analysisResult', JSON.stringify(result))
+    router.push('/result')
+  } catch (e) {
+    detectStatus.value = '分析失败: ' + e.message
+  } finally {
+    analyzing.value = false
+  }
+}
+
+// 提取关键点
+const extractKeypoints = (landmarks) => {
+  const keypointNames = [
+    'nose', 'left_eye_inner', 'left_eye', 'left_eye_outer',
+    'right_eye_inner', 'right_eye', 'right_eye_outer',
+    'left_ear', 'right_ear', 'mouth_left', 'mouth_right',
+    'left_shoulder', 'right_shoulder', 'left_elbow', 'right_elbow',
+    'left_wrist', 'right_wrist', 'left_pinky', 'right_pinky',
+    'left_index', 'right_index', 'left_thumb', 'right_thumb',
+    'left_hip', 'right_hip', 'left_knee', 'right_knee',
+    'left_ankle', 'right_ankle', 'left_heel', 'right_heel',
+    'left_foot_index', 'right_foot_index'
+  ]
+  
+  const keypoints = {}
+  landmarks.forEach((lm, i) => {
+    if (lm.visibility > 0.5) {
+      keypoints[keypointNames[i]] = { x: lm.x, y: lm.y, z: lm.z || 0, visibility: lm.visibility }
+    }
+  })
+  return keypoints
+}
+
+// 计算角度
+const calculateAngle = (a, b, c) => {
+  const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x)
+  let angle = Math.abs(radians * 180 / Math.PI)
+  if (angle > 180) angle = 360 - angle
+  return Math.round(angle)
+}
+
+// 计算所有角度
+const calculateAllAngles = (kp) => {
+  const angles = {}
+  
+  if (kp.left_shoulder && kp.left_elbow && kp.left_wrist) {
+    angles.leftElbow = calculateAngle(kp.left_shoulder, kp.left_elbow, kp.left_wrist)
+  }
+  if (kp.right_shoulder && kp.right_elbow && kp.right_wrist) {
+    angles.rightElbow = calculateAngle(kp.right_shoulder, kp.right_elbow, kp.right_wrist)
+  }
+  if (kp.left_hip && kp.left_knee && kp.left_ankle) {
+    angles.leftKnee = calculateAngle(kp.left_hip, kp.left_knee, kp.left_ankle)
+  }
+  if (kp.right_hip && kp.right_knee && kp.right_ankle) {
+    angles.rightKnee = calculateAngle(kp.right_hip, kp.right_knee, kp.right_ankle)
+  }
+  if (kp.left_hip && kp.right_hip && kp.left_shoulder) {
+    angles.torso = calculateAngle(kp.left_hip, kp.right_hip, kp.left_shoulder)
+  }
+  
+  return angles
+}
+
+// 标准动作数据
+const standardActions = {
+  forehand: {
+    name: '正手攻球',
+    angles: {
+      leftElbow: { optimal: 90, range: [70, 110] },
+      rightElbow: { optimal: 85, range: [65, 105] },
+      leftKnee: { optimal: 130, range: [110, 150] },
+      rightKnee: { optimal: 140, range: [120, 160] },
+      torso: { optimal: 10, range: [0, 20] }
+    }
+  },
+  backhand: {
+    name: '反手推挡',
+    angles: {
+      leftElbow: { optimal: 80, range: [60, 100] },
+      rightElbow: { optimal: 85, range: [65, 105] },
+      leftKnee: { optimal: 140, range: [120, 160] },
+      rightKnee: { optimal: 145, range: [125, 165] },
+      torso: { optimal: 5, range: [0, 15] }
+    }
+  },
+  forehand_loop: {
+    name: '正手拉弧圈',
+    angles: {
+      leftElbow: { optimal: 100, range: [80, 120] },
+      rightElbow: { optimal: 95, range: [75, 115] },
+      leftKnee: { optimal: 120, range: [100, 140] },
+      rightKnee: { optimal: 130, range: [110, 150] },
+      torso: { optimal: 15, range: [5, 25] }
+    }
+  },
+  serve: {
+    name: '发球',
+    angles: {
+      leftElbow: { optimal: 70, range: [50, 90] },
+      rightElbow: { optimal: 90, range: [70, 110] },
+      leftKnee: { optimal: 130, range: [110, 150] },
+      rightKnee: { optimal: 140, range: [120, 160] },
+      torso: { optimal: 8, range: [0, 18] }
+    }
+  },
+  backhand_loop: {
+    name: '反手拉弧圈',
+    angles: {
+      leftElbow: { optimal: 85, range: [65, 105] },
+      rightElbow: { optimal: 90, range: [70, 110] },
+      leftKnee: { optimal: 130, range: [110, 150] },
+      rightKnee: { optimal: 135, range: [115, 155] },
+      torso: { optimal: 10, range: [0, 20] }
+    }
+  },
+  flick: {
+    name: '挑打',
+    angles: {
+      leftElbow: { optimal: 75, range: [55, 95] },
+      rightElbow: { optimal: 80, range: [60, 100] },
+      leftKnee: { optimal: 135, range: [115, 155] },
+      rightKnee: { optimal: 140, range: [120, 160] },
+      torso: { optimal: 5, range: [0, 15] }
     }
   }
-  sessionStorage.setItem('analysisResult', JSON.stringify(result))
-  router.push('/result')
+}
+
+// 分析动作
+const analyzeAction = (angles, actionType) => {
+  const standard = standardActions[actionType] || standardActions.forehand
+  const issues = []
+  const strengths = []
+  let totalScore = 100
+  let confidence = 0.9
+
+  for (const [key, value] of Object.entries(angles)) {
+    const std = standard.angles[key]
+    if (!std) continue
+
+    confidence = Math.min(confidence, 0.95)
+    
+    if (value >= std.range[0] && value <= std.range[1]) {
+      strengths.push({
+        joint: getJointName(key),
+        message: `角度 ${value}° 处于标准范围`
+      })
+    } else {
+      const diff = value < std.range[0] ? std.range[0] - value : value - std.range[1]
+      const severity = diff > 15 ? 'high' : 'medium'
+      
+      issues.push({
+        joint: getJointName(key),
+        userAngle: value,
+        optimal: std.optimal,
+        diff: value - std.optimal,
+        severity,
+        suggestion: getSuggestion(key, value, std.optimal)
+      })
+      
+      totalScore -= diff * 1.5
+    }
+  }
+
+  return {
+    score: Math.max(0, Math.min(100, Math.round(totalScore))),
+    level: getLevelFromScore(totalScore),
+    confidence,
+    strengths,
+    issues
+  }
+}
+
+const getJointName = (key) => {
+  const names = { leftElbow: '左肘', rightElbow: '右肘', leftKnee: '左膝', rightKnee: '右膝', torso: '躯干' }
+  return names[key] || key
+}
+
+const getLevelFromScore = (score) => {
+  if (score >= 90) return '优秀'
+  if (score >= 80) return '良好'
+  if (score >= 70) return '中等'
+  if (score >= 60) return '及格'
+  return '待提高'
+}
+
+const getSuggestion = (key, value, optimal) => {
+  const diff = value - optimal
+  const suggestions = {
+    leftElbow: diff < 0 ? '左肘弯曲不足，建议增加弯曲角度' : '左肘弯曲过度，建议减小角度',
+    rightElbow: diff < 0 ? '右肘弯曲不足，建议增加弯曲角度' : '右肘弯曲过度，建议减小角度',
+    leftKnee: diff < 0 ? '左膝弯曲不足，建议降低重心' : '左膝弯曲过度，建议抬高重心',
+    rightKnee: diff < 0 ? '右膝弯曲不足，建议降低重心' : '右膝弯曲过度，建议抬高重心',
+    torso: diff < 0 ? '躯干前倾不足，建议增加前倾' : '躯干前倾过度，建议挺直身体'
+  }
+  return suggestions[key] || '请教练现场指导'
 }
 </script>
 
@@ -611,6 +848,11 @@ const startAnalysis = async () => {
 .status-toast.error {
   background: rgba(255, 59, 48, 0.1);
   color: #FF3B30;
+}
+
+.status-toast.warning {
+  background: rgba(255, 149, 0, 0.1);
+  color: #FF9500;
 }
 
 /* 操作按钮 */
