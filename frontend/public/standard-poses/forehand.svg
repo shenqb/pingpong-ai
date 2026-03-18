@@ -5,64 +5,60 @@
       <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
       <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
     </linearGradient>
-    <linearGradient id="skin" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#FFE4C4;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#FFDAB9;stop-opacity:1" />
-    </linearGradient>
   </defs>
   
   <rect width="400" height="300" fill="url(#bg)"/>
   
-  <!-- 地板 -->
-  <rect x="0" y="250" width="400" height="50" fill="#2d1b4e" opacity="0.3"/>
-  
-  <!-- 球台（简化） -->
-  <rect x="300" y="200" width="100" height="8" fill="#1a5276" rx="2"/>
-  <rect x="300" y="208" width="100" height="42" fill="#2874a6" opacity="0.5"/>
-  <line x1="350" y1="200" x2="350" y2="250" stroke="white" stroke-width="2"/>
+  <!-- 球台 -->
+  <rect x="280" y="180" width="120" height="8" fill="#1a5276" rx="2"/>
+  <rect x="280" y="188" width="120" height="42" fill="#2874a6" opacity="0.3"/>
+  <line x1="340" y1="180" x2="340" y2="230" stroke="white" stroke-width="2"/>
   
   <!-- 人物 - 正手攻球姿势 -->
-  <!-- 腿 -->
-  <line x1="160" y1="230" x2="140" y2="250" stroke="url(#skin)" stroke-width="12" stroke-linecap="round"/>
-  <line x1="180" y1="230" x2="200" y2="250" stroke="url(#skin)" stroke-width="12" stroke-linecap="round"/>
+  <!-- 腿（右腿在后，左腿在前） -->
+  <line x1="160" y1="230" x2="130" y2="250" stroke="#FFDAB9" stroke-width="14" stroke-linecap="round"/>
+  <line x1="190" y1="230" x2="220" y2="250" stroke="#FFDAB9" stroke-width="14" stroke-linecap="round"/>
   
   <!-- 身体 -->
-  <ellipse cx="170" cy="180" rx="30" ry="50" fill="#3498db"/>
+  <ellipse cx="175" cy="175" rx="35" ry="55" fill="#3498db"/>
   
-  <!-- 左臂（持拍手，伸展） -->
-  <line x1="190" y1="160" x2="240" y2="140" stroke="url(#skin)" stroke-width="10" stroke-linecap="round"/>
-  <line x1="240" y1="140" x2="280" y2="170" stroke="url(#skin)" stroke-width="10" stroke-linecap="round"/>
+  <!-- 右臂（持拍手） -->
+  <line x1="200" y1="155" x2="250" y2="135" stroke="#FFDAB9" stroke-width="12" stroke-linecap="round"/>
+  <line x1="250" y1="135" x2="290" y2="160" stroke="#FFDAB9" stroke-width="12" stroke-linecap="round"/>
   
   <!-- 球拍 -->
-  <ellipse cx="295" cy="175" rx="25" ry="30" fill="#2c3e50" transform="rotate(-20, 295, 175)"/>
-  <ellipse cx="295" cy="175" rx="20" ry="25" fill="#e74c3c" transform="rotate(-20, 295, 175)"/>
-  <rect x="275" y="195" width="8" height="30" fill="#8b4513" transform="rotate(-20, 279, 210)"/>
+  <ellipse cx="305" cy="168" rx="25" ry="32" fill="#2c3e50" transform="rotate(-15, 305, 168)"/>
+  <ellipse cx="305" cy="168" rx="18" ry="24" fill="#e74c3c" transform="rotate(-15, 305, 168)"/>
+  <rect x="293" y="192" width="7" height="28" fill="#8b4513" transform="rotate(-15, 297, 206)"/>
   
-  <!-- 右臂 -->
-  <line x1="150" y1="160" x2="120" y2="180" stroke="url(#skin)" stroke-width="10" stroke-linecap="round"/>
+  <!-- 左臂 -->
+  <line x1="150" y1="160" x2="110" y2="175" stroke="#FFDAB9" stroke-width="12" stroke-linecap="round"/>
   
   <!-- 头 -->
-  <circle cx="170" cy="110" r="25" fill="url(#skin)"/>
-  
+  <circle cx="175" cy="105" r="28" fill="#FFDAB9"/>
   <!-- 眼睛 -->
-  <circle cx="175" cy="105" r="3" fill="#2c3e50"/>
+  <circle cx="182" cy="100" r="3" fill="#2c3e50"/>
+  <!-- 视线 -->
+  <line x1="182" y1="100" x2="300" y2="80" stroke="#007AFF" stroke-width="2" stroke-dasharray="4,4"/>
   
   <!-- 球 -->
-  <circle cx="320" cy="160" r="8" fill="#f39c12"/>
-  <circle cx="318" cy="158" r="2" fill="white" opacity="0.6"/>
+  <circle cx="320" cy="150" r="10" fill="#f39c12"/>
+  <circle cx="318" cy="148" r="2.5" fill="white" opacity="0.8"/>
+  <path d="M 310 155 L 300 130" stroke="#FF9500" stroke-width="2" stroke-linecap="round"/>
   
-  <!-- 动作箭头 -->
-  <path d="M 240 200 Q 260 180 280 195" stroke="#f1c40f" stroke-width="3" fill="none" stroke-dasharray="5,5"/>
-  <polygon points="280,195 275,185 285,188" fill="#f1c40f"/>
+  <!-- 标题 -->
+  <text x="30" y="40" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="white">正手攻球</text>
+  <text x="30" y="65" font-family="Arial, sans-serif" font-size="14" fill="rgba(255,255,255,0.8)">Forehand Drive</text>
   
-  <!-- 文字 -->
-  <text x="50" y="40" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white">正手攻球</text>
-  <text x="50" y="65" font-family="Arial, sans-serif" font-size="14" fill="rgba(255,255,255,0.8)">Forehand Drive</text>
+  <!-- 动作要领 -->
+  <text x="30" y="280" font-family="Arial, sans-serif" font-size="12" fill="white">• 重心略前倾 • 击球点在身体右侧前方</text>
+  <text x="30" y="298" font-family="Arial, sans-serif" font-size="12" fill="white">• 大臂带动小臂发力 • 手腕固定</text>
   
-  <!-- 关键点标注 -->
-  <circle cx="240" cy="140" r="4" fill="#e74c3c"/>
-  <text x="230" y="125" font-size="10" fill="white">肘关节 90°</text>
+  <!-- 关键点标注 - 右肘 -->
+  <circle cx="250" cy="135" r="4" fill="#FF3B30"/>
+  <text x="255" y="125" font-family="Arial, sans-serif" font-size="11" fill="white">90°</text>
   
-  <circle cx="170" cy="180" r="4" fill="#e74c3c"/>
-  <text x="100" y="185" font-size="10" fill="white">重心前倾</text>
+  <!-- 关键点标注 - 重心 -->
+  <circle cx="175" cy="175" r="4" fill="#FF3B30"/>
+  <text x="180" y="170" font-family="Arial, sans-serif" font-size="11" fill="white">重心</text>
 </svg>

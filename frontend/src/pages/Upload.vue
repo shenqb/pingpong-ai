@@ -106,8 +106,10 @@
             <div class="upload-hint">支持 JPG、PNG 格式</div>
           </template>
           <template v-else>
-            <img :src="previewImage" class="preview-img" ref="previewRef" @load="onImageLoad" />
-            <canvas ref="canvasRef" class="pose-canvas"></canvas>
+            <div class="preview-container" ref="containerRef">
+              <img :src="previewImage" class="preview-img" ref="previewRef" @load="onImageLoad" />
+              <canvas ref="canvasRef" class="pose-canvas"></canvas>
+            </div>
             <button class="change-btn" @click.stop="resetUpload">更换图片</button>
           </template>
         </div>
@@ -161,6 +163,7 @@ const selectedAngle = ref('')
 const previewImage = ref(null)
 const previewRef = ref(null)
 const canvasRef = ref(null)
+const containerRef = ref(null)
 const analyzing = ref(false)
 const detectStatus = ref('')
 const detectedLandmarks = ref(null)
@@ -340,25 +343,36 @@ const onImageLoad = async () => {
 
 const drawSkeleton = (landmarks, canvas, img) => {
   const ctx = canvas.getContext('2d')
-  canvas.width = img.naturalWidth
-  canvas.height = img.naturalHeight
+  // 使用图片的实际显示尺寸，而非原始尺寸
+  const displayWidth = img.clientWidth || img.offsetWidth
+  const displayHeight = img.clientHeight || img.offsetHeight
+  
+  canvas.width = displayWidth
+  canvas.height = displayHeight
+  canvas.style.width = displayWidth + 'px'
+  canvas.style.height = displayHeight + 'px'
+  
+  // 根据显示尺寸计算点位大小
+  const pointSize = Math.max(3, Math.min(8, displayWidth / 100))
+  const lineWidth = Math.max(2, Math.min(4, displayWidth / 200))
+  
   ctx.fillStyle = '#007AFF'
   landmarks.forEach(lm => {
     if (lm.visibility > 0.5) {
       ctx.beginPath()
-      ctx.arc(lm.x * canvas.width, lm.y * canvas.height, 5, 0, 2 * Math.PI)
+      ctx.arc(lm.x * displayWidth, lm.y * displayHeight, pointSize, 0, 2 * Math.PI)
       ctx.fill()
     }
   })
   const conns = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]]
   ctx.strokeStyle = '#007AFF'
-  ctx.lineWidth = 2
+  ctx.lineWidth = lineWidth
   conns.forEach(([s,e]) => {
     const a = landmarks[s], b = landmarks[e]
     if (a.visibility > 0.5 && b.visibility > 0.5) {
       ctx.beginPath()
-      ctx.moveTo(a.x * canvas.width, a.y * canvas.height)
-      ctx.lineTo(b.x * canvas.width, b.y * canvas.height)
+      ctx.moveTo(a.x * displayWidth, a.y * displayHeight)
+      ctx.lineTo(b.x * displayWidth, b.y * displayHeight)
       ctx.stroke()
     }
   })
@@ -376,7 +390,7 @@ const startAnalysis = async () => {
   try {
     const keypoints = extractKeypoints(detectedLandmarks.value)
     const angles = calculateAllAngles(keypoints)
-    const analysis = analyzeAction(angles, selectedAction.value)
+    const analysis = analyzeAction(angles, selectedAction.value, keypoints)  // 传入 keypoints
     
     const result = {
       action: selectedAction.value,
@@ -389,7 +403,8 @@ const startAnalysis = async () => {
       analysis: {
         strengths: analysis.strengths,
         issues: analysis.issues
-      }
+      },
+      poseCheck: analysis.poseCheck  // 新增：动作检测结果
     }
 
     sessionStorage.setItem('analysisResult', JSON.stringify(result))
@@ -428,36 +443,215 @@ const calculateAllAngles = (kp) => {
 }
 
 const standardActions = {
-  forehand: { name: '正手攻球', angles: { leftElbow: { optimal: 90, range: [70, 110] }, rightElbow: { optimal: 85, range: [65, 105] }, leftKnee: { optimal: 130, range: [110, 150] }, rightKnee: { optimal: 140, range: [120, 160] }, torso: { optimal: 10, range: [0, 20] } } },
-  backhand: { name: '反手推挡', angles: { leftElbow: { optimal: 80, range: [60, 100] }, rightElbow: { optimal: 85, range: [65, 105] }, leftKnee: { optimal: 140, range: [120, 160] }, rightKnee: { optimal: 145, range: [125, 165] }, torso: { optimal: 5, range: [0, 15] } } },
-  forehand_loop: { name: '正手拉弧圈', angles: { leftElbow: { optimal: 100, range: [80, 120] }, rightElbow: { optimal: 95, range: [75, 115] }, leftKnee: { optimal: 120, range: [100, 140] }, rightKnee: { optimal: 130, range: [110, 150] }, torso: { optimal: 15, range: [5, 25] } } },
-  serve: { name: '发球', angles: { leftElbow: { optimal: 70, range: [50, 90] }, rightElbow: { optimal: 90, range: [70, 110] }, leftKnee: { optimal: 130, range: [110, 150] }, rightKnee: { optimal: 140, range: [120, 160] }, torso: { optimal: 8, range: [0, 18] } } },
-  backhand_loop: { name: '反手拉弧圈', angles: { leftElbow: { optimal: 85, range: [65, 105] }, rightElbow: { optimal: 90, range: [70, 110] }, leftKnee: { optimal: 130, range: [110, 150] }, rightKnee: { optimal: 135, range: [115, 155] }, torso: { optimal: 10, range: [0, 20] } } },
-  flick: { name: '挑打', angles: { leftElbow: { optimal: 75, range: [55, 95] }, rightElbow: { optimal: 80, range: [60, 100] }, leftKnee: { optimal: 135, range: [115, 155] }, rightKnee: { optimal: 140, range: [120, 160] }, torso: { optimal: 5, range: [0, 15] } } }
+  forehand: { name: '正手攻球', angles: { leftElbow: { optimal: 90, range: [70, 110], weight: 1.0 }, rightElbow: { optimal: 85, range: [65, 105], weight: 1.0 }, leftKnee: { optimal: 130, range: [110, 150], weight: 0.8 }, rightKnee: { optimal: 140, range: [120, 160], weight: 0.8 }, torso: { optimal: 10, range: [0, 20], weight: 0.6 } } },
+  backhand: { name: '反手推挡', angles: { leftElbow: { optimal: 80, range: [60, 100], weight: 1.0 }, rightElbow: { optimal: 85, range: [65, 105], weight: 1.0 }, leftKnee: { optimal: 140, range: [120, 160], weight: 0.8 }, rightKnee: { optimal: 145, range: [125, 165], weight: 0.8 }, torso: { optimal: 5, range: [0, 15], weight: 0.6 } } },
+  forehand_loop: { name: '正手拉弧圈', angles: { leftElbow: { optimal: 100, range: [80, 120], weight: 1.0 }, rightElbow: { optimal: 95, range: [75, 115], weight: 1.0 }, leftKnee: { optimal: 120, range: [100, 140], weight: 0.8 }, rightKnee: { optimal: 130, range: [110, 150], weight: 0.8 }, torso: { optimal: 15, range: [5, 25], weight: 0.6 } } },
+  serve: { name: '发球', angles: { leftElbow: { optimal: 70, range: [50, 90], weight: 1.0 }, rightElbow: { optimal: 90, range: [70, 110], weight: 1.0 }, leftKnee: { optimal: 130, range: [110, 150], weight: 0.8 }, rightKnee: { optimal: 140, range: [120, 160], weight: 0.8 }, torso: { optimal: 8, range: [0, 18], weight: 0.6 } } },
+  backhand_loop: { name: '反手拉弧圈', angles: { leftElbow: { optimal: 85, range: [65, 105], weight: 1.0 }, rightElbow: { optimal: 90, range: [70, 110], weight: 1.0 }, leftKnee: { optimal: 130, range: [110, 150], weight: 0.8 }, rightKnee: { optimal: 135, range: [115, 155], weight: 0.8 }, torso: { optimal: 10, range: [0, 20], weight: 0.6 } } },
+  flick: { name: '挑打', angles: { leftElbow: { optimal: 75, range: [55, 95], weight: 1.0 }, rightElbow: { optimal: 80, range: [60, 100], weight: 1.0 }, leftKnee: { optimal: 135, range: [115, 155], weight: 0.8 }, rightKnee: { optimal: 140, range: [120, 160], weight: 0.8 }, torso: { optimal: 5, range: [0, 15], weight: 0.6 } } }
 }
 
-const analyzeAction = (angles, actionType) => {
+// 检测是否为乒乓球动作姿态
+const detectTableTennisPose = (keypoints) => {
+  const checks = {
+    hasEnoughKeypoints: false,
+    isStanding: false,
+    hasActiveArmPosition: false,
+    hasProperStance: false
+  }
+  
+  const reasons = []
+  
+  // 1. 检测关键点数量
+  const visibleKeypoints = Object.values(keypoints).filter(kp => kp && kp.visibility > 0.5)
+  checks.hasEnoughKeypoints = visibleKeypoints.length >= 10
+  if (!checks.hasEnoughKeypoints) {
+    reasons.push('检测到的身体关键点不足，请确保全身入镜')
+  }
+  
+  // 2. 检测是否站立姿态
+  const leftHip = keypoints.left_hip
+  const rightHip = keypoints.right_hip
+  const leftKnee = keypoints.left_knee
+  const rightKnee = keypoints.right_knee
+  const leftAnkle = keypoints.left_ankle
+  const rightAnkle = keypoints.right_ankle
+  
+  if (leftHip && rightHip && leftKnee && rightKnee) {
+    // 臀部应该高于膝盖，膝盖高于脚踝（站立姿态）
+    const hipY = (leftHip.y + rightHip.y) / 2
+    const kneeY = (leftKnee.y + rightKnee.y) / 2
+    checks.isStanding = hipY < kneeY && kneeY < 0.9 // 膝盖不能太低（蹲着）
+    if (!checks.isStanding) {
+      reasons.push('请保持站立姿态进行动作')
+    }
+  } else {
+    reasons.push('无法检测腿部姿态')
+  }
+  
+  // 3. 检测手臂是否在运动位置（关键特征）
+  const leftShoulder = keypoints.left_shoulder
+  const rightShoulder = keypoints.right_shoulder
+  const leftElbow = keypoints.left_elbow
+  const rightElbow = keypoints.right_elbow
+  const leftWrist = keypoints.left_wrist
+  const rightWrist = keypoints.right_wrist
+  
+  if (leftShoulder && rightShoulder && leftElbow && rightElbow) {
+    // 手臂不能完全下垂（肘部应该在肩膀和臀部之间的高度）
+    const shoulderY = Math.min(leftShoulder.y, rightShoulder.y)
+    const hipY = leftHip ? (leftHip.y + (rightHip?.y || leftHip.y)) / 2 : 0.6
+    
+    const leftArmRaised = leftElbow.y < hipY && leftElbow.y > shoulderY - 0.2
+    const rightArmRaised = rightElbow.y < hipY && rightElbow.y > shoulderY - 0.2
+    
+    // 至少一只手臂抬起（运动姿态）
+    checks.hasActiveArmPosition = leftArmRaised || rightArmRaised
+    if (!checks.hasActiveArmPosition) {
+      reasons.push('手臂姿态不符合乒乓球动作，请确保手臂处于挥拍位置')
+    }
+  } else {
+    reasons.push('无法检测手臂姿态')
+    checks.hasActiveArmPosition = false
+  }
+  
+  // 4. 检测身体朝向（侧面视角时，肩膀连线应该有一定倾斜）
+  if (leftShoulder && rightShoulder) {
+    const shoulderWidth = Math.abs(leftShoulder.x - rightShoulder.x)
+    const shoulderTilt = Math.abs(leftShoulder.y - rightShoulder.y)
+    
+    // 肩膀应该有一定宽度（正对镜头）或有一定倾斜（侧身）
+    checks.hasProperStance = shoulderWidth > 0.05 || shoulderTilt > 0.02
+    if (!checks.hasProperStance) {
+      reasons.push('身体姿态不清晰，请确保侧身或正对镜头')
+    }
+  }
+  
+  // 综合判断
+  const passed = checks.hasEnoughKeypoints && checks.isStanding
+  const confidence = Object.values(checks).filter(Boolean).length / 4
+  
+  return {
+    passed,
+    confidence,
+    checks,
+    reasons: reasons.length > 0 ? reasons : ['姿态符合乒乓球动作特征']
+  }
+}
+
+// 非线性扣分函数：偏差越大，扣分增长越快
+const getAnglePenalty = (diff) => {
+  if (diff <= 10) return 0       // 小偏差不扣分
+  if (diff <= 20) return 2       // 10-20° 扣 2 分
+  if (diff <= 30) return 5       // 20-30° 扣 5 分
+  if (diff <= 40) return 10      // 30-40° 扣 10 分
+  return 15                       // >40° 封顶扣 15 分
+}
+
+const analyzeAction = (angles, actionType, keypoints) => {
   const standard = standardActions[actionType] || standardActions.forehand
   const issues = []
   const strengths = []
-  let totalScore = 100
-  let confidence = 0.9
-
+  
+  // ========== 三级检测机制 ==========
+  
+  // Level 1: 关键点检测
+  const visibleKeypoints = Object.values(keypoints || {}).filter(kp => kp && kp.visibility > 0.5)
+  if (visibleKeypoints.length < 8) {
+    return { 
+      score: 30, 
+      level: '待提高', 
+      confidence: 0.3, 
+      strengths: [], 
+      issues: [{ joint: '关键点检测', userAngle: 0, optimal: 0, diff: 0, severity: 'high', suggestion: '检测到的身体部位不足，请确保全身入镜、光线充足' }],
+      poseCheck: { passed: false, reasons: ['检测到的身体关键点不足'] }
+    }
+  }
+  
+  // Level 2: 动作特异性检测
+  const poseCheck = detectTableTennisPose(keypoints)
+  if (!poseCheck.passed) {
+    return { 
+      score: 35, 
+      level: '待提高', 
+      confidence: poseCheck.confidence, 
+      strengths: [], 
+      issues: [{ joint: '动作识别', userAngle: 0, optimal: 0, diff: 0, severity: 'high', suggestion: poseCheck.reasons.join('；') }],
+      poseCheck
+    }
+  }
+  
+  // ========== Level 3: 动作质量评分 ==========
+  
+  let accuracyScore = 100  // 准确度得分
+  let fluencyScore = 100   // 流畅度得分
+  let matchScore = 100     // 匹配度得分
+  let confidence = 0.85 + poseCheck.confidence * 0.1
+  
+  const angleKeys = Object.keys(angles)
+  const totalAngles = angleKeys.length
+  
+  // 计算各关节得分
   for (const [key, value] of Object.entries(angles)) {
     const std = standard.angles[key]
     if (!std) continue
-    confidence = Math.min(confidence, 0.95)
+    
+    const weight = std.weight || 1.0
+    
     if (value >= std.range[0] && value <= std.range[1]) {
-      strengths.push({ joint: getJointName(key), message: `角度 ${value}° 处于标准范围` })
+      // 在标准范围内，完美！
+      strengths.push({ joint: getJointName(key), message: `角度 ${value}° 处于标准范围 ${std.range[0]}°-${std.range[1]}°` })
     } else {
+      // 超出范围，计算偏差
       const diff = value < std.range[0] ? std.range[0] - value : value - std.range[1]
-      const severity = diff > 15 ? 'high' : 'medium'
-      issues.push({ joint: getJointName(key), userAngle: value, optimal: std.optimal, diff: value - std.optimal, severity, suggestion: getSuggestion(key, value, std.optimal) })
-      totalScore -= diff * 1.5
+      const penalty = getAnglePenalty(diff) * weight
+      
+      accuracyScore -= penalty
+      
+      const severity = diff > 30 ? 'high' : diff > 15 ? 'medium' : 'light'
+      issues.push({ 
+        joint: getJointName(key), 
+        userAngle: value, 
+        optimal: std.optimal, 
+        diff: Math.round(value - std.optimal), 
+        severity, 
+        suggestion: getSuggestion(key, value, std.optimal) 
+      })
     }
   }
-
-  return { score: Math.max(0, Math.min(100, Math.round(totalScore))), level: getLevelFromScore(totalScore), confidence, strengths, issues }
+  
+  // 流畅度评分：基于关键点可见性
+  const detectedRatio = totalAngles / 5
+  fluencyScore = 70 + detectedRatio * 30
+  
+  // 匹配度评分：基于置信度
+  matchScore = Math.round(confidence * 100)
+  
+  // 综合评分：新公式（通过检测后才评分）
+  const baseScore = 40  // 通过检测的基础分
+  const accuracyBonus = Math.max(0, (accuracyScore - 60) * 0.35)  // 准确度贡献 35%
+  const fluencyBonus = Math.max(0, (fluencyScore - 60) * 0.25)   // 流畅度贡献 25%
+  const matchBonus = Math.max(0, (matchScore - 60) * 0.25)       // 匹配度贡献 25%
+  const poseBonus = poseCheck.confidence * 10  // 动作特征加分 0-10 分
+  
+  const finalScore = Math.round(baseScore + accuracyBonus + fluencyBonus + matchBonus + poseBonus)
+  
+  // 确保分数在合理范围
+  const score = Math.max(40, Math.min(100, finalScore))
+  
+  // 添加动作检测通过的提示
+  if (strengths.length === 0) {
+    strengths.push({ joint: '动作识别', message: '检测到乒乓球动作姿态' })
+  }
+  
+  return { 
+    score, 
+    level: getLevelFromScore(score), 
+    confidence, 
+    strengths,
+    issues,
+    poseCheck: { ...poseCheck, passed: true }
+  }
 }
 
 const getJointName = (key) => ({ leftElbow: '左肘', rightElbow: '右肘', leftKnee: '左膝', rightKnee: '右膝', torso: '躯干' }[key] || key)
@@ -630,9 +824,39 @@ onUnmounted(() => {
 .upload-icon { font-size: 48px; margin-bottom: 12px; }
 .upload-text { font-size: 16px; font-weight: 600; color: #1A1A1A; margin-bottom: 4px; }
 .upload-hint { font-size: 13px; color: #8E8E93; }
-.preview-img { width: 100%; border-radius: 12px; margin-bottom: 12px; }
-.pose-canvas { position: absolute; top: 16px; left: 16px; right: 16px; pointer-events: none; }
-.change-btn { background: rgba(0, 122, 255, 0.1); color: #007AFF; border: none; padding: 8px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+.preview-container {
+  position: relative;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.preview-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 12px;
+}
+
+.pose-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  border-radius: 12px;
+}
+
+.change-btn {
+  background: rgba(0, 122, 255, 0.1);
+  color: #007AFF;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 12px;
+}
 
 .status-toast { margin-top: 12px; padding: 12px 16px; background: rgba(0, 0, 0, 0.05); border-radius: 10px; font-size: 14px; color: #8E8E93; }
 .status-toast.success { background: rgba(52, 199, 89, 0.1); color: #34C759; }
