@@ -1,0 +1,313 @@
+/* ========================================
+   PingPong AI - V3.0 设计变量
+   ======================================== */
+
+:root {
+    /* 主色 */
+    --primary-blue: #0066FF;
+    --primary-blue-light: #00C6FF;
+    --primary-blue-dark: #0052CC;
+    
+    /* 强调色 */
+    --accent-orange: #FF6B35;
+    --accent-orange-light: #FF8E53;
+    
+    /* 功能色 */
+    --success: #00C853;
+    --success-light: #69F0AE;
+    --error: #FF3B30;
+    --warning: #FF9500;
+    --info: #007AFF;
+    
+    /* 中性色 - 浅色模式 */
+    --bg-primary: #F0F6FC;
+    --bg-card: #FFFFFF;
+    --text-primary: #0D1117;
+    --text-secondary: #8B949E;
+    --text-placeholder: #D0D7DE;
+    --border: #D0D7DE;
+    
+    /* 中性色 - 深色模式 */
+    --bg-primary-dark: #0D1117;
+    --bg-card-dark: #161B22;
+    --text-primary-dark: #F0F6FC;
+    --text-secondary-dark: #8B949E;
+    
+    /* 渐变色 */
+    --gradient-primary: linear-gradient(135deg, #0066FF 0%, #00C6FF 100%);
+    --gradient-success: linear-gradient(135deg, #00C853 0%, #69F0AE 100%);
+    --gradient-vibrant: linear-gradient(135deg, #FF6B35 0%, #FF8E53 100%);
+    
+    /* 阴影 */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
+    --shadow-color: 0 8px 32px rgba(0, 102, 255, 0.24);
+    
+    /* 圆角 */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+    --radius-circle: 50%;
+    
+    /* 间距 */
+    --spacing-xs: 8px;
+    --spacing-sm: 12px;
+    --spacing-md: 16px;
+    --spacing-lg: 20px;
+    --spacing-xl: 24px;
+    
+    /* 字体 */
+    --font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    --font-number: 'DIN Alternate', 'Helvetica Neue', sans-serif;
+    
+    /* 动画 */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s ease;
+}
+
+/* 深色模式 */
+body.dark-mode {
+    --bg-primary: var(--bg-primary-dark);
+    --bg-card: var(--bg-card-dark);
+    --text-primary: var(--text-primary-dark);
+    --text-secondary: var(--text-secondary-dark);
+    --text-placeholder: #30363D;
+    --border: #30363D;
+}
+
+/* 全局样式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background var(--transition-normal), color var(--transition-normal);
+}
+
+/* 通用工具类 */
+.glass {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .glass {
+    background: rgba(22, 27, 34, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 渐变背景 */
+.gradient-primary {
+    background: var(--gradient-primary);
+}
+
+.gradient-success {
+    background: var(--gradient-success);
+}
+
+.gradient-vibrant {
+    background: var(--gradient-vibrant);
+}
+
+/* 阴影 */
+.shadow-sm {
+    box-shadow: var(--shadow-sm);
+}
+
+.shadow-md {
+    box-shadow: var(--shadow-md);
+}
+
+.shadow-lg {
+    box-shadow: var(--shadow-lg);
+}
+
+.shadow-color {
+    box-shadow: var(--shadow-color);
+}
+
+/* 圆角 */
+.radius-sm {
+    border-radius: var(--radius-sm);
+}
+
+.radius-md {
+    border-radius: var(--radius-md);
+}
+
+.radius-lg {
+    border-radius: var(--radius-lg);
+}
+
+.radius-xl {
+    border-radius: var(--radius-xl);
+}
+
+.radius-circle {
+    border-radius: var(--radius-circle);
+}
+
+/* 文本样式 */
+.text-primary {
+    color: var(--text-primary);
+}
+
+.text-secondary {
+    color: var(--text-secondary);
+}
+
+.text-number {
+    font-family: var(--font-number);
+}
+
+/* 功能色 */
+.text-success {
+    color: var(--success);
+}
+
+.text-error {
+    color: var(--error);
+}
+
+.text-warning {
+    color: var(--warning);
+}
+
+.text-info {
+    color: var(--info);
+}
+
+.bg-success {
+    background: var(--success);
+}
+
+.bg-error {
+    background: var(--error);
+}
+
+.bg-warning {
+    background: var(--warning);
+}
+
+.bg-info {
+    background: var(--info);
+}
+
+/* 动画类 */
+.fade-in {
+    animation: fadeIn var(--transition-normal);
+}
+
+.slide-up {
+    animation: slideUp var(--transition-normal);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 按钮基础样式 */
+.btn {
+    padding: 12px 24px;
+    border-radius: var(--radius-md);
+    font-size: 16px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-primary {
+    background: var(--gradient-primary);
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-color);
+}
+
+.btn-primary:active {
+    transform: scale(0.98);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 2px solid var(--primary-blue);
+    color: var(--primary-blue);
+}
+
+.btn-outline:hover {
+    background: var(--primary-blue);
+    color: white;
+}
+
+/* 卡片基础样式 */
+.card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-fast);
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* 徽章样式 */
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.badge-success {
+    background: rgba(0, 200, 83, 0.1);
+    color: var(--success);
+}
+
+.badge-warning {
+    background: rgba(255, 149, 0, 0.1);
+    color: var(--warning);
+}
+
+.badge-error {
+    background: rgba(255, 59, 48, 0.1);
+    color: var(--error);
+}
+
+.badge-info {
+    background: rgba(0, 122, 255, 0.1);
+    color: var(--info);
+}

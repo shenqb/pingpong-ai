@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PingPong AI - UI V3.0 原型</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- 页面切换导航 -->
+    <div class="prototype-nav">
+        <button class="nav-btn active" data-page="home">🏠 首页</button>
+        <button class="nav-btn" data-page="result">📊 结果页</button>
+        <button class="nav-btn" data-page="compare">🎬 对比页</button>
+        <button class="nav-btn" data-page="upload">📤 上传页</button>
+        <button class="nav-btn" data-page="standard">🎯 标准动作</button>
+        <button class="nav-btn" data-page="theme">🌓 切换主题</button>
+    </div>
+
+    <!-- 首页 -->
+    <div class="page active" id="home">
+        <div class="phone-frame">
+            <!-- 状态栏 -->
+            <div class="status-bar">
+                <span class="time">9:41</span>
+                <div class="status-icons">
+                    <span>📶</span>
+                    <span>📡</span>
+                    <span>🔋</span>
+                </div>
+            </div>
+
+            <!-- Hero 区域 -->
+            <section class="hero-section">
+                <div class="hero-content">
+                    <div class="brand-logo">🏓</div>
+                    <h1 class="brand-title">PingPong AI</h1>
+                    <p class="brand-subtitle">你的专属 AI 教练</p>
+                </div>
+
+                <!-- 统计卡片 -->
+                <div class="stats-card glass">
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value" data-count="12">0</div>
+                            <div class="stat-label">今日分析</div>
+                        </div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-item">
+                            <div class="stat-value" data-count="85">0</div>
+                            <div class="stat-label">平均分</div>
+                        </div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-item">
+                            <div class="stat-value" data-count="15">0</div>
+                            <div class="stat-label">进步%</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 主内容 -->
+            <main class="main-content">
+                <!-- 快捷入口 -->
+                <section class="section">
+                    <div class="section-header">
+                        <h2>开始训练</h2>
+                    </div>
+                    <div class="action-grid">
+                        <div class="action-card glass" onclick="alert('跳转到动作分析')">
+                            <div class="action-icon blue">📊</div>
+                            <div class="action-info">
+                                <div class="action-title">动作分析</div>
+                                <div class="action-desc">上传视频获取 AI 评分</div>
+                            </div>
+                            <div class="action-arrow">›</div>
+                        </div>
+
+                        <div class="action-card glass" onclick="alert('跳转到标准动作')">
+                            <div class="action-icon green">🎯</div>
+                            <div class="action-info">
+                                <div class="action-title">标准动作</div>
+                                <div class="action-desc">学习职业选手动作</div>
+                            </div>
+                            <div class="action-arrow">›</div>
+                        </div>
+
+                        <div class="action-card glass" onclick="alert('跳转到实时分析')">
+                            <div class="action-icon orange">🎬</div>
+                            <div class="action-info">
+                                <div class="action-title">实时分析</div>
+                                <div class="action-desc">摄像头实时姿态检测</div>
+                            </div>
+                            <div class="action-arrow">›</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 最近分析 -->
+                <section class="section">
+                    <div class="section-header">
+                        <h2>最近分析</h2>
+                        <span class="see-all">查看全部</span>
+                    </div>
+                    <div class="recent-list">
+                        <div class="recent-item glass">
+                            <div class="recent-score score-85">85</div>
+                            <div class="recent-info">
+                                <div class="recent-action">正手攻球</div>
+                                <div class="recent-time">2 分钟前</div>
+                            </div>
+                            <div class="recent-trend up">↑ 5</div>
+                        </div>
+                        <div class="recent-item glass">
+                            <div class="recent-score score-78">78</div>
+                            <div class="recent-info">
+                                <div class="recent-action">反手推挡</div>
+                                <div class="recent-time">1 小时前</div>
+                            </div>
+                            <div class="recent-trend same">→ 0</div>
+                        </div>
+                        <div class="recent-item glass">
+                            <div class="recent-score score-92">92</div>
+                            <div class="recent-info">
+                                <div class="recent-action">正手发球</div>
+                                <div class="recent-time">昨天</div>
+                            </div>
+                            <div class="recent-trend up">↑ 12</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 推荐训练 -->
+                <section class="section">
+                    <div class="section-header">
+                        <h2>推荐训练</h2>
+                    </div>
+                    <div class="recommend-scroll">
+                        <div class="recommend-card">
+                            <div class="rec-icon">🎯</div>
+                            <div class="rec-title">正手攻球</div>
+                            <div class="rec-level beginner">初级</div>
+                            <div class="rec-duration">15 分钟</div>
+                        </div>
+                        <div class="recommend-card">
+                            <div class="rec-icon">🏓</div>
+                            <div class="rec-title">反手推挡</div>
+                            <div class="rec-level intermediate">中级</div>
+                            <div class="rec-duration">20 分钟</div>
+                        </div>
+                        <div class="recommend-card">
+                            <div class="rec-icon">⚡</div>
+                            <div class="rec-title">快速发球</div>
+                            <div class="rec-level advanced">高级</div>
+                            <div class="rec-duration">25 分钟</div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <!-- 底部 Tab Bar -->
+            <nav class="tab-bar glass">
+                <div class="tab-item active">
+                    <div class="tab-icon">🏠</div>
+                    <div class="tab-label">首页</div>
+                </div>
+                <div class="tab-item">
+                    <div class="tab-icon">📊</div>
+                    <div class="tab-label">分析</div>
+                </div>
+                <div class="tab-item center">
+                    <div class="tab-center-btn">+</div>
+                </div>
+                <div class="tab-item">
+                    <div class="tab-icon">🎯</div>
+                    <div class="tab-label">课程</div>
+                </div>
+                <div class="tab-item">
+                    <div class="tab-icon">👤</div>
+                    <div class="tab-label">我的</div>
+                </div>
+            </nav>
+        </div>
+    </div>
+
+    <!-- 结果页 -->
+    <div class="page" id="result">
+        <div class="phone-frame">
+            <div class="status-bar">
+                <span class="time">9:41</span>
+                <div class="status-icons">
+                    <span>📶</span>
+                    <span>📡</span>
+                    <span>🔋</span>
+                </div>
+            </div>
+
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <button class="back-btn" onclick="switchPage('home')">←</button>
+                <h1 class="page-title">分析结果</h1>
+                <button class="action-btn">分享</button>
+            </div>
+
+            <main class="main-content">
+                <!-- 评分区域 -->
+                <section class="score-section">
+                    <div class="score-circle glass">
+                        <svg class="progress-ring" width="160" height="160">
+                            <circle class="progress-ring-bg" cx="80" cy="80" r="72"/>
+                            <circle class="progress-ring-fill" cx="80" cy="80" r="72"/>
+                        </svg>
+                        <div class="score-content">
+                            <div class="score-number">85</div>
+                            <div class="score-text">良好水平</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 关键指标 -->
+                <section class="section">
+                    <div class="section-header">
+                        <h2>关键指标</h2>
+                    </div>
+                    <div class="metrics-grid">
+                        <div class="metric-card glass">
+                            <div class="metric-icon">✓</div>
+                            <div class="metric-label">肘角度</div>
+                            <div class="metric-value">165°</div>
+                            <div class="metric-status success">正常</div>
+                        </div>
+                        <div class="metric-card glass">
+                            <div class="metric-icon warning">⚠</div>
+                            <div class="metric-label">膝角度</div>
+                            <div class="metric-value">120°</div>
+                            <div class="metric-status warning">偏低</div>
+                        </div>
+                        <div class="metric-card glass">
+                            <div class="metric-icon warning">⚠</div>
+                            <div class="metric-label">重心</div>
+                            <div class="metric-value">偏后</div>
+                            <div class="metric-status warning">需调整</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 问题分析 -->
+                <section class="section">
+                    <div class="section-header">
+                        <h2>问题分析</h2>
+                    </div>
+                    <div class="problem-list">
+                        <div class="problem-card glass warning">
+                            <div class="problem-header">
+                                <span class="problem-icon">⚠</span>
+                                <span class="problem-title">肘部角度偏低</span>
+                            </div>
+                            <div class="problem-desc">建议：抬高手肘，保持 160-170° 角度</div>
+                            <button class="problem-action">查看标准动作 →</button>
+                        </div>
+                        <div class="problem-card glass warning">
+                            <div class="problem-header">
+                                <span class="problem-icon">⚠</span>
+                                <span class="problem-title">重心需要调整</span>
+                            </div>
+                            <div class="problem-desc">建议：重心稍向前移，保持身体平衡</div>
+                            <button class="problem-action">查看标准动作 →</button>
+                        </div>
+                        <div class="problem-card glass success">
+                            <div class="problem-header">
+                                <span class="problem-icon">✓</span>
+                                <span class="problem-title">优点：重心转移良好</span>
+                            </div>
+                            <div class="problem-desc">保持这个感觉！这是很好的发力习惯</div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <!-- 底部操作 -->
+            <div class="bottom-actions">
+                <button class="btn btn-outline" onclick="alert('跳转到对比页')">对比标准动作</button>
+                <button class="btn btn-primary" onclick="alert('跳转到上传页')">再测一次</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 对比页 -->
+    <div class="page" id="compare">
+        <div class="phone-frame">
+            <div class="status-bar">
+                <span class="time">9:41</span>
+                <div class="status-icons">
+                    <span>📶</span>
+                    <span>📡</span>
+                    <span>🔋</span>
+                </div>
+            </div>
+
+            <div class="top-bar">
+                <button class="back-btn" onclick="switchPage('result')">←</button>
+                <h1 class="page-title">动作对比</h1>
+                <button class="action-btn">全屏</button>
+            </div>
+
+            <main class="main-content">
+                <!-- 视频对比区域 -->
+                <section class="video-compare">
+                    <div class="video-card glass">
+                        <div class="video-label">标准动作</div>
+                        <div class="video-placeholder">
+                            <div class="video-icon">🎬</div>
+                            <div class="video-text">马龙 - 正手攻球</div>
+                        </div>
+                        <div class="video-controls">
+                            <button class="control-btn">▶</button>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 45%"></div>
+                            </div>
+                            <span class="time-label">1:25 / 3:00</span>
+                        </div>
+                    </div>
+                    <div class="video-card glass">
+                        <div class="video-label">你的动作</div>
+                        <div class="video-placeholder">
+                            <div class="video-icon">🎬</div>
+                            <div class="video-text">你的视频</div>
+                        </div>
+                        <div class="video-controls">
+                            <button class="control-btn">▶</button>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 45%"></div>
+                            </div>
+                            <span class="time-label">1:25 / 2:45</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 同步控制 -->
+                <section class="sync-controls">
+                    <button class="sync-btn">⏮</button>
+                    <button class="sync-btn play">⏯</button>
+                    <button class="sync-btn">⏭</button>
+                    <button class="sync-btn">🐢 0.5x</button>
+                </section>
+
+                <!-- 角度对比 -->
+                <section class="section">
+                    <div class="section-header">
+                        <h2>关键角度对比</h2>
+                    </div>
+                    <div class="compare-list">
+                        <div class="compare-item">
+                            <div class="compare-label">肘部角度</div>
+                            <div class="compare-bars">
+                                <div class="compare-bar-row">
+                                    <span class="bar-label">标准</span>
+                                    <div class="bar-track">
+                                        <div class="bar-fill standard" style="width: 85%"></div>
+                                    </div>
+                                    <span class="bar-value">165°</span>
+                                </div>
+                                <div class="compare-bar-row">
+                                    <span class="bar-label">你的</span>
+                                    <div class="bar-track">
+                                        <div class="bar-fill user" style="width: 70%"></div>
+                                    </div>
+                                    <span class="bar-value">145°</span>
+                                </div>
+                                <div class="compare-diff warning">差 -20°</div>
+                            </div>
+                        </div>
+
+                        <div class="compare-item">
+                            <div class="compare-label">膝部角度</div>
+                            <div class="compare-bars">
+                                <div class="compare-bar-row">
+                                    <span class="bar-label">标准</span>
+                                    <div class="bar-track">
+                                        <div class="bar-fill standard" style="width: 75%"></div>
+                                    </div>
+                                    <span class="bar-value">120°</span>
+                                </div>
+                                <div class="compare-bar-row">
+                                    <span class="bar-label">你的</span>
+                                    <div class="bar-track">
+                                        <div class="bar-fill user" style="width: 73%"></div>
+                                    </div>
+                                    <span class="bar-value">118°</span>
+                                </div>
+                                <div class="compare-diff success">差 -2°</div>
+                            </div>
+                        </div>
+
+                        <div class="compare-item">
+                            <div class="compare-label">躯干角度</div>
+                            <div class="compare-bars">
+                                <div class="compare-bar-row">
+                                    <span class="bar-label">标准</span>
+                                    <div class="bar-track">
+                                        <div class="bar-fill standard" style="width: 60%"></div>
+                                    </div>
+                                    <span class="bar-value">45°</span>
+                                </div>
+                                <div class="compare-bar-row">
+                                    <span class="bar-label">你的</span>
+                                    <div class="bar-track">
+                                        <div class="bar-fill user" style="width: 40%"></div>
+                                    </div>
+                                    <span class="bar-value">30°</span>
+                                </div>
+                                <div class="compare-diff warning">差 -15°</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <div class="bottom-actions">
+                <button class="btn btn-outline" onclick="alert('生成训练计划')">生成训练计划</button>
+                <button class="btn btn-primary" onclick="alert('分享对比')">分享对比</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 上传页 -->
+    <div class="page" id="upload">
+        <div class="phone-frame">
+            <div class="status-bar">
+                <span class="time">9:41</span>
+                <div class="status-icons">
+                    <span>📶</span>
+                    <span>📡</span>
+                    <span>🔋</span>
+                </div>
+            </div>
+
+            <div class="top-bar">
+                <button class="back-btn" onclick="switchPage('home')">←</button>
+                <h1 class="page-title">动作分析</h1>
+                <button class="action-btn">帮助</button>
+            </div>
+
+            <main class="main-content">
+                <!-- 上传区域 -->
+                <section class="upload-section">
+                    <div class="upload-area glass" id="uploadArea">
+                        <div class="upload-icon">📁</div>
+                        <div class="upload-text">拖拽视频到此处</div>
+                        <div class="upload-subtext">或点击上传</div>
+                        <div class="upload-hint">支持 MP4/MOV · 最大 50MB · 60 秒</div>
+                    </div>
+
+                    <button class="camera-btn glass" onclick="alert('打开摄像头')">
+                        <span class="camera-icon">🎥</span>
+                        <span class="camera-text">实时拍摄</span>
+                        <span class="camera-subtext">使用摄像头录制分析</span>
+                    </button>
+                </section>
+
+                <!-- 动作类型选择 -->
+                <section class="section">
+                    <div class="section-header">
+                        <h2>选择分析动作</h2>
+                    </div>
+                    <div class="segmented-control">
+                        <button class="segment active">正手攻球</button>
+                        <button class="segment">反手推挡</button>
+                        <button class="segment">发球</button>
+                    </div>
+                </section>
+
+                <!-- 最近上传 -->
+                <section class="section">
+                    <div class="section-header">
+                        <h2>最近上传</h2>
+                    </div>
+                    <div class="recent-upload-list">
+                        <div class="recent-upload-item glass">
+                            <div class="upload-thumbnail">🎬</div>
+                            <div class="upload-info">
+                                <div class="upload-name">正手攻球_0325.mp4</div>
+                                <div class="upload-meta">2 分钟前 · 2.3MB</div>
+                            </div>
+                            <div class="upload-status pending">分析中</div>
+                        </div>
+                        <div class="recent-upload-item glass">
+                            <div class="upload-thumbnail">🎬</div>
+                            <div class="upload-info">
+                                <div class="upload-name">反手推挡_0324.mp4</div>
+                                <div class="upload-meta">昨天 · 3.1MB</div>
+                            </div>
+                            <div class="upload-status done">85 分</div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <div class="bottom-actions">
+                <button class="btn btn-primary" onclick="alert('开始分析')">开始分析</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 标准动作页 -->
+    <div class="page" id="standard">
+        <div class="phone-frame">
+            <div class="status-bar">
+                <span class="time">9:41</span>
+                <div class="status-icons">
+                    <span>📶</span>
+                    <span>📡</span>
+                    <span>🔋</span>
+                </div>
+            </div>
+
+            <div class="top-bar">
+                <button class="back-btn" onclick="switchPage('home')">←</button>
+                <h1 class="page-title">标准动作库</h1>
+                <button class="action-btn">🔍</button>
+            </div>
+
+            <main class="main-content">
+                <!-- 分类筛选 -->
+                <section class="section">
+                    <div class="segmented-control">
+                        <button class="segment active">全部</button>
+                        <button class="segment">正手</button>
+                        <button class="segment">反手</button>
+                        <button class="segment">发球</button>
+                    </div>
+                </section>
+
+                <!-- 正手攻球 -->
+                <section class="section">
+                    <div class="section-header">
+                        <h2>正手攻球</h2>
+                    </div>
+                    <div class="action-list">
+                        <div class="action-list-item glass">
+                            <div class="action-thumbnail">
+                                <span class="thumbnail-icon">🎬</span>
+                                <span class="duration">3:25</span>
+                            </div>
+                            <div class="action-info">
+                                <div class="action-name">正手攻球 - 初级</div>
+                                <div class="action-meta">
+                                    <span class="stars">⭐⭐☆☆☆</span>
+                                    <span class="player">马龙演示</span>
+                                </div>
+                                <div class="action-desc">基础动作要领</div>
+                            </div>
+                            <div class="action-actions">
+                                <button class="icon-btn">❤️</button>
+                                <button class="icon-btn primary">▶</button>
+                            </div>
+                        </div>
+
+                        <div class="action-list-item glass">
+                            <div class="action-thumbnail">
+                                <span class="thumbnail-icon">🎬</span>
+                                <span class="duration">4:12</span>
+                            </div>
+                            <div class="action-info">
+                                <div class="action-name">正手攻球 - 中级</div>
+                                <div class="action-meta">
+                                    <span class="stars">⭐⭐⭐☆☆</span>
+                                    <span class="player">樊振东演示</span>
+                                </div>
+                                <div class="action-desc">进阶技巧</div>
+                            </div>
+                            <div class="action-actions">
+                                <button class="icon-btn">❤️</button>
+                                <button class="icon-btn primary">▶</button>
+                            </div>
+                        </div>
+
+                        <div class="action-list-item glass">
+                            <div class="action-thumbnail">
+                                <span class="thumbnail-icon">🎬</span>
+                                <span class="duration">5:08</span>
+                            </div>
+                            <div class="action-info">
+                                <div class="action-name">正手攻球 - 高级</div>
+                                <div class="action-meta">
+                                    <span class="stars">⭐⭐⭐⭐⭐</span>
+                                    <span class="player">马龙演示</span>
+                                </div>
+                                <div class="action-desc">专业级动作</div>
+                            </div>
+                            <div class="action-actions">
+                                <button class="icon-btn">❤️</button>
+                                <button class="icon-btn primary">▶</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
